@@ -1,0 +1,1193 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sistem MONEV & Alur Berkas BPS</title>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            bps: {
+              orange: '#f97316',
+              darkorange: '#ea580c',
+              lightorange: '#fff7ed',
+              blue: '#0284c7',
+              green: '#16a34a'
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <!-- SheetJS untuk Export ke Excel -->
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+</head>
+<body class="bg-orange-50/30 font-sans text-slate-800 antialiased min-h-screen flex flex-col">
+
+  <!-- TOP HEADER WITH BPS LOGO & ORANGE THEME -->
+  <header class="bg-gradient-to-r from-orange-600 to-orange-500 text-white sticky top-0 z-50 shadow-md">
+    <div class="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
+      <div class="flex items-center gap-3 cursor-pointer" onclick="navigateTo('dashboard')">
+        <div class="bg-white p-1 rounded-lg shadow-sm flex items-center justify-center w-11 h-11">
+          <img src="E:\akbar\Lambang_Badan_Pusat_Statistik_(BPS)_Indonesia.svg.webp" 
+               alt="Logo BPS" 
+               class="max-h-full max-w-full object-contain"
+               onerror="this.onerror=null; this.src='https://upload.wikimedia.org/wikipedia/commons/2/28/Lambang_Badan_Pusat_Statistik_%28BPS%29_Indonesia.svg';">
+        </div>
+        <div>
+          <h1 class="font-bold text-lg leading-tight tracking-wide">SISTEM MONEV ALUR BERKAS</h1>
+          <p class="text-xs text-orange-100 font-medium">Badan Pusat Statistik (BPS)</p>
+        </div>
+      </div>
+      <div class="flex items-center gap-2">
+        <button onclick="exportAllToExcel()" class="bg-white text-orange-600 hover:bg-orange-50 text-xs px-3.5 py-2 rounded-lg font-bold flex items-center gap-1.5 shadow-sm transition">
+          <i data-lucide="download" class="w-4 h-4"></i> Export Semua ke Excel
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- MAIN CONTAINER -->
+  <main class="max-w-7xl mx-auto px-4 py-6 flex-1 w-full">
+
+    <!-- ================= HALAMAN 1: DASHBOARD UTAMA ================= -->
+    <div id="page-dashboard" class="page-view space-y-8">
+      
+      <!-- METRICS SUMMARY -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div class="bg-white p-4 rounded-xl border border-orange-100 shadow-sm flex items-center justify-between">
+          <div>
+            <p class="text-xs text-slate-500 font-medium">Total Berkas Keuangan</p>
+            <h3 class="text-2xl font-bold text-slate-800 mt-1" id="stat-total">0</h3>
+          </div>
+          <div class="p-3 bg-orange-100 text-orange-600 rounded-lg"><i data-lucide="files" class="w-5 h-5"></i></div>
+        </div>
+        <div class="bg-white p-4 rounded-xl border border-orange-100 shadow-sm flex items-center justify-between">
+          <div>
+            <p class="text-xs text-slate-500 font-medium">Total Pengajuan Lembur</p>
+            <h3 class="text-2xl font-bold text-amber-600 mt-1" id="stat-lembur">0</h3>
+          </div>
+          <div class="p-3 bg-amber-50 text-amber-600 rounded-lg"><i data-lucide="clock" class="w-5 h-5"></i></div>
+        </div>
+        <div class="bg-white p-4 rounded-xl border border-orange-100 shadow-sm flex items-center justify-between">
+          <div>
+            <p class="text-xs text-slate-500 font-medium">Laporan Lembur Masuk</p>
+            <h3 class="text-2xl font-bold text-emerald-600 mt-1" id="stat-laporan-lembur">0</h3>
+          </div>
+          <div class="p-3 bg-emerald-50 text-emerald-600 rounded-lg"><i data-lucide="clipboard-check" class="w-5 h-5"></i></div>
+        </div>
+        <div class="bg-white p-4 rounded-xl border border-orange-100 shadow-sm flex items-center justify-between">
+          <div>
+            <p class="text-xs text-slate-500 font-medium">Total Transaksi UP</p>
+            <h3 class="text-2xl font-bold text-rose-600 mt-1" id="stat-up">0</h3>
+          </div>
+          <div class="p-3 bg-rose-50 text-rose-600 rounded-lg"><i data-lucide="shopping-cart" class="w-5 h-5"></i></div>
+        </div>
+      </div>
+
+      <!-- NAVIGASI MENU MODUL -->
+      <div>
+        <h2 class="text-base font-bold text-slate-800 mb-3 flex items-center gap-2">
+          <i data-lucide="grid" class="w-5 h-5 text-orange-600"></i> Pilih Modul Input Data
+        </h2>
+        <div class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-3">
+          
+          <button onclick="navigateTo('page-sm')" class="p-3.5 bg-white hover:bg-orange-50 border border-orange-200 rounded-xl shadow-sm text-center transition flex flex-col items-center gap-2 group">
+            <div class="p-2.5 bg-orange-100 text-orange-600 rounded-lg group-hover:scale-110 transition-transform"><i data-lucide="file-plus" class="w-5 h-5"></i></div>
+            <span class="text-xs font-bold text-slate-700">1. Subject Matter</span>
+          </button>
+
+          <button onclick="navigateTo('page-ppk')" class="p-3.5 bg-white hover:bg-orange-50 border border-orange-200 rounded-xl shadow-sm text-center transition flex flex-col items-center gap-2 group">
+            <div class="p-2.5 bg-orange-100 text-orange-600 rounded-lg group-hover:scale-110 transition-transform"><i data-lucide="user-check" class="w-5 h-5"></i></div>
+            <span class="text-xs font-bold text-slate-700">2. Input PPK</span>
+          </button>
+
+          <button onclick="navigateTo('page-ppspm')" class="p-3.5 bg-white hover:bg-orange-50 border border-orange-200 rounded-xl shadow-sm text-center transition flex flex-col items-center gap-2 group">
+            <div class="p-2.5 bg-orange-100 text-orange-600 rounded-lg group-hover:scale-110 transition-transform"><i data-lucide="shield-check" class="w-5 h-5"></i></div>
+            <span class="text-xs font-bold text-slate-700">3. Input PPSPM</span>
+          </button>
+
+          <button onclick="navigateTo('page-bendahara')" class="p-3.5 bg-white hover:bg-orange-50 border border-orange-200 rounded-xl shadow-sm text-center transition flex flex-col items-center gap-2 group">
+            <div class="p-2.5 bg-orange-100 text-orange-600 rounded-lg group-hover:scale-110 transition-transform"><i data-lucide="wallet" class="w-5 h-5"></i></div>
+            <span class="text-xs font-bold text-slate-700">4. Bendahara</span>
+          </button>
+
+          <button onclick="navigateTo('page-arsip')" class="p-3.5 bg-white hover:bg-orange-50 border border-orange-200 rounded-xl shadow-sm text-center transition flex flex-col items-center gap-2 group">
+            <div class="p-2.5 bg-orange-100 text-orange-600 rounded-lg group-hover:scale-110 transition-transform"><i data-lucide="archive" class="w-5 h-5"></i></div>
+            <span class="text-xs font-bold text-slate-700">5. Modul Arsip</span>
+          </button>
+
+          <button onclick="navigateTo('page-pengajuan-lembur')" class="p-3.5 bg-white hover:bg-orange-50 border border-orange-200 rounded-xl shadow-sm text-center transition flex flex-col items-center gap-2 group">
+            <div class="p-2.5 bg-orange-100 text-orange-600 rounded-lg group-hover:scale-110 transition-transform"><i data-lucide="clock" class="w-5 h-5"></i></div>
+            <span class="text-xs font-bold text-slate-700">6. Ajuan Lembur</span>
+          </button>
+
+          <button onclick="navigateTo('page-laporan-lembur')" class="p-3.5 bg-white hover:bg-orange-50 border border-orange-200 rounded-xl shadow-sm text-center transition flex flex-col items-center gap-2 group">
+            <div class="p-2.5 bg-orange-100 text-orange-600 rounded-lg group-hover:scale-110 transition-transform"><i data-lucide="clipboard-check" class="w-5 h-5"></i></div>
+            <span class="text-xs font-bold text-slate-700">7. Laporan Lembur</span>
+          </button>
+
+          <button onclick="navigateTo('page-up')" class="p-3.5 bg-white hover:bg-orange-50 border border-orange-200 rounded-xl shadow-sm text-center transition flex flex-col items-center gap-2 group">
+            <div class="p-2.5 bg-orange-100 text-orange-600 rounded-lg group-hover:scale-110 transition-transform"><i data-lucide="shopping-cart" class="w-5 h-5"></i></div>
+            <span class="text-xs font-bold text-slate-700">8. Belanja UP</span>
+          </button>
+
+        </div>
+      </div>
+
+      <!-- SECTION 1: TABEL MONITORING ALUR BERKAS KEUANGAN -->
+      <div class="bg-white rounded-xl shadow-sm border border-orange-200 overflow-hidden">
+        <div class="p-4 bg-orange-50/50 border-b border-orange-200 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+          <div>
+            <h3 class="font-bold text-slate-800 flex items-center gap-2">
+              <i data-lucide="file-text" class="w-4 h-4 text-orange-600"></i> Monitoring Alur Berkas Keuangan
+            </h3>
+            <p class="text-xs text-slate-500">Pemantauan posisi berkas dari Subject Matter hingga Arsip</p>
+          </div>
+          <input type="text" id="search-monitoring" onkeyup="filterMonitoringTable()" placeholder="Cari Uraian / Memo..." class="px-3 py-1.5 border border-slate-300 rounded-lg text-sm w-full sm:w-64 focus:outline-none focus:ring-2 focus:ring-orange-500">
+        </div>
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-sm text-slate-600" id="table-monitoring">
+            <thead class="bg-orange-100/60 border-b border-orange-200 text-xs font-bold uppercase text-slate-700">
+              <tr>
+                <th class="px-4 py-3">Subject Matter</th>
+                <th class="px-4 py-3">Uraian / Kegiatan</th>
+                <th class="px-4 py-3">Status Berkas</th>
+                <th class="px-4 py-3">Detail Tanggal / Memo</th>
+                <th class="px-4 py-3">Catatan / Keterangan</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-orange-100" id="monitoring-tbody">
+              <tr>
+                <td colspan="5" class="text-center py-8 text-slate-400 text-sm">
+                  Belum ada data berkas keuangan.
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- SECTION 2: TABEL MONITORING LEMBUR -->
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        
+        <!-- Tabel Pengajuan Lembur -->
+        <div class="bg-white rounded-xl shadow-sm border border-orange-200 overflow-hidden">
+          <div class="p-4 bg-orange-50/50 border-b border-orange-200 flex justify-between items-center">
+            <h3 class="font-bold text-slate-800 flex items-center gap-2">
+              <i data-lucide="clock" class="w-4 h-4 text-orange-600"></i> Monitoring Pengajuan Lembur
+            </h3>
+          </div>
+          <div class="overflow-x-auto">
+            <table class="w-full text-left text-sm text-slate-600">
+              <thead class="bg-orange-100/60 border-b border-orange-200 text-xs font-bold uppercase text-slate-700">
+                <tr>
+                  <th class="px-4 py-3">Ketua Tim</th>
+                  <th class="px-4 py-3">Tgl Pengajuan & Mulai</th>
+                  <th class="px-4 py-3">Durasi</th>
+                  <th class="px-4 py-3">Peserta Lembur</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-orange-100" id="lembur-tbody">
+                <tr>
+                  <td colspan="4" class="text-center py-6 text-slate-400 text-sm">
+                    Belum ada pengajuan lembur.
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Tabel Laporan Hasil Lembur (DENGAN TAMPILAN GAMBAR/FOTO) -->
+        <div class="bg-white rounded-xl shadow-sm border border-orange-200 overflow-hidden">
+          <div class="p-4 bg-orange-50/50 border-b border-orange-200 flex justify-between items-center">
+            <h3 class="font-bold text-slate-800 flex items-center gap-2">
+              <i data-lucide="clipboard-check" class="w-4 h-4 text-orange-600"></i> Monitoring Laporan Lembur
+            </h3>
+          </div>
+          <div class="overflow-x-auto">
+            <table class="w-full text-left text-sm text-slate-600">
+              <thead class="bg-orange-100/60 border-b border-orange-200 text-xs font-bold uppercase text-slate-700">
+                <tr>
+                  <th class="px-4 py-3">Nama Peserta</th>
+                  <th class="px-4 py-3">Tgl & Jam</th>
+                  <th class="px-4 py-3">Output Pekerjaan</th>
+                  <th class="px-4 py-3">Foto Bukti</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-orange-100" id="laporan-lembur-tbody">
+                <tr>
+                  <td colspan="4" class="text-center py-6 text-slate-400 text-sm">
+                    Belum ada laporan hasil lembur.
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- SECTION 3: TABEL MONITORING BELANJA UP (DENGAN TAMPILAN GAMBAR NOTA) -->
+      <div class="bg-white rounded-xl shadow-sm border border-orange-200 overflow-hidden">
+        <div class="p-4 bg-orange-50/50 border-b border-orange-200 flex justify-between items-center">
+          <h3 class="font-bold text-slate-800 flex items-center gap-2">
+            <i data-lucide="shopping-cart" class="w-4 h-4 text-orange-600"></i> Monitoring Belanja Uang Persediaan (UP)
+          </h3>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-sm text-slate-600">
+            <thead class="bg-orange-100/60 border-b border-orange-200 text-xs font-bold uppercase text-slate-700">
+              <tr>
+                <th class="px-4 py-3">Tanggal</th>
+                <th class="px-4 py-3">Jenis Belanja</th>
+                <th class="px-4 py-3">Toko / Penyedia</th>
+                <th class="px-4 py-3">Nominal (Rp)</th>
+                <th class="px-4 py-3">Bukti Kuitansi/Nota</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-orange-100" id="up-tbody">
+              <tr>
+                <td colspan="5" class="text-center py-6 text-slate-400 text-sm">
+                  Belum ada data belanja UP.
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+
+
+    <!-- ================= HALAMAN 2: SUBJECT MATTER ================= -->
+    <div id="page-sm" class="page-view hidden space-y-6">
+      <button onclick="navigateTo('dashboard')" class="text-xs font-bold text-orange-600 hover:text-orange-800 flex items-center gap-1 bg-white px-3 py-1.5 rounded-lg border border-orange-200 w-max shadow-sm">
+        <i data-lucide="arrow-left" class="w-4 h-4"></i> Kembali ke Dashboard
+      </button>
+      
+      <div class="bg-white p-6 rounded-xl border border-orange-200 shadow-sm space-y-4 max-w-3xl mx-auto">
+        <div class="flex items-center gap-2 text-orange-600 font-bold border-b border-orange-100 pb-3">
+          <i data-lucide="file-plus" class="w-5 h-5"></i> Halaman Input Subject Matter (Pengajuan Awal)
+        </div>
+        <form id="form-sm" onsubmit="handleSubjectMatterSubmit(event)" class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+          <div>
+            <label class="block font-medium mb-1">No Memo/BOS (Otomatis)</label>
+            <input type="text" id="sm-no-memo" readonly class="w-full bg-slate-100 border border-slate-300 rounded-lg px-3 py-2 font-mono text-slate-600">
+          </div>
+          <div>
+            <label class="block font-medium mb-1">Nama Pembuat</label>
+            <input type="text" id="sm-pembuat" required placeholder="Nama Pegawai / Staf" class="w-full border border-slate-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-orange-500 outline-none">
+          </div>
+          <div class="md:col-span-2">
+            <label class="block font-medium mb-1">Uraian Kegiatan / Pencairan</label>
+            <textarea id="sm-uraian" required rows="3" placeholder="Uraian rinci belanja..." class="w-full border border-slate-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-orange-500 outline-none"></textarea>
+          </div>
+          <div>
+            <label class="block font-medium mb-1">Tanggal Penyerahan ke PPK</label>
+            <input type="date" id="sm-tgl-penyerahan" required class="w-full border border-slate-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-orange-500 outline-none">
+          </div>
+          <div class="md:col-span-2 flex justify-end gap-3 pt-2">
+            <button type="button" onclick="navigateTo('dashboard')" class="px-4 py-2 border border-slate-300 rounded-lg text-slate-600 hover:bg-slate-50">Batal</button>
+            <button type="submit" class="bg-orange-600 text-white px-5 py-2 rounded-lg hover:bg-orange-700 font-medium flex items-center gap-2 shadow-sm">
+              <i data-lucide="send" class="w-4 h-4"></i> Simpan Pengajuan SM
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+
+    <!-- ================= HALAMAN 3: PPK ================= -->
+    <div id="page-ppk" class="page-view hidden space-y-6">
+      <button onclick="navigateTo('dashboard')" class="text-xs font-bold text-orange-600 hover:text-orange-800 flex items-center gap-1 bg-white px-3 py-1.5 rounded-lg border border-orange-200 w-max shadow-sm">
+        <i data-lucide="arrow-left" class="w-4 h-4"></i> Kembali ke Dashboard
+      </button>
+
+      <div class="bg-white p-6 rounded-xl border border-orange-200 shadow-sm space-y-4 max-w-3xl mx-auto">
+        <div class="flex items-center gap-2 text-orange-600 font-bold border-b border-orange-100 pb-3">
+          <i data-lucide="user-check" class="w-5 h-5"></i> Halaman Verifikasi PPK
+        </div>
+        <form id="form-ppk" onsubmit="handlePPKSubmit(event)" class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+          <div class="md:col-span-2">
+            <label class="block font-medium mb-1">Pilih Berkas Masuk</label>
+            <select id="ppk-select-berkas" onchange="loadPPKData()" required class="w-full border border-slate-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-orange-500 outline-none">
+              <option value="">-- Pilih Berkas --</option>
+            </select>
+          </div>
+          <div>
+            <label class="block font-medium mb-1">No Memo BOS PPK (Otomatis)</label>
+            <input type="text" id="ppk-no-memo" readonly class="w-full bg-slate-100 border border-slate-300 rounded-lg px-3 py-2 font-mono text-slate-600">
+          </div>
+          <div>
+            <label class="block font-medium mb-1">Tanggal Terima PPK</label>
+            <input type="date" id="ppk-tgl-terima" required class="w-full border border-slate-300 rounded-lg px-3 py-2">
+          </div>
+          <div>
+            <label class="block font-medium mb-1">Siapa yang Menerima</label>
+            <input type="text" id="ppk-penerima" placeholder="Nama Staf PPK" required class="w-full border border-slate-300 rounded-lg px-3 py-2">
+          </div>
+          <div>
+            <label class="block font-medium mb-1">Status Keputusan</label>
+            <select id="ppk-status" onchange="togglePPKFields()" class="w-full border border-slate-300 rounded-lg px-3 py-2">
+              <option value="Diteruskan">Diteruskan ke PPSPM</option>
+              <option value="Dikembalikan">Dikembalikan ke Pembuat</option>
+            </select>
+          </div>
+          <div id="ppk-field-teruskan">
+            <label class="block font-medium mb-1">Tanggal Diteruskan ke PPSPM</label>
+            <input type="date" id="ppk-tgl-ppspm" class="w-full border border-slate-300 rounded-lg px-3 py-2">
+          </div>
+          <div id="ppk-field-kembali" class="hidden">
+            <label class="block font-medium mb-1">Tanggal Pengembalian</label>
+            <input type="date" id="ppk-tgl-kembali" class="w-full border border-slate-300 rounded-lg px-3 py-2">
+          </div>
+          <div class="md:col-span-2">
+            <label class="block font-medium mb-1">Catatan PPK</label>
+            <textarea id="ppk-catatan" rows="2" placeholder="Catatan perbaikan / persetujuan..." class="w-full border border-slate-300 rounded-lg px-3 py-2"></textarea>
+          </div>
+          <div class="md:col-span-2 flex justify-end gap-3 pt-2">
+            <button type="button" onclick="navigateTo('dashboard')" class="px-4 py-2 border border-slate-300 rounded-lg text-slate-600 hover:bg-slate-50">Batal</button>
+            <button type="submit" class="bg-orange-600 text-white px-5 py-2 rounded-lg hover:bg-orange-700 font-medium flex items-center gap-2 shadow-sm">
+              <i data-lucide="save" class="w-4 h-4"></i> Simpan Verifikasi PPK
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+
+    <!-- ================= HALAMAN 4: PPSPM ================= -->
+    <div id="page-ppspm" class="page-view hidden space-y-6">
+      <button onclick="navigateTo('dashboard')" class="text-xs font-bold text-orange-600 hover:text-orange-800 flex items-center gap-1 bg-white px-3 py-1.5 rounded-lg border border-orange-200 w-max shadow-sm">
+        <i data-lucide="arrow-left" class="w-4 h-4"></i> Kembali ke Dashboard
+      </button>
+
+      <div class="bg-white p-6 rounded-xl border border-orange-200 shadow-sm space-y-4 max-w-3xl mx-auto">
+        <div class="flex items-center gap-2 text-orange-600 font-bold border-b border-orange-100 pb-3">
+          <i data-lucide="shield-check" class="w-5 h-5"></i> Halaman Pengujian PPSPM
+        </div>
+        <form id="form-ppspm" onsubmit="handlePPSPMSubmit(event)" class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+          <div class="md:col-span-2">
+            <label class="block font-medium mb-1">Pilih Berkas dari PPK</label>
+            <select id="ppspm-select-berkas" onchange="loadPPSPMData()" required class="w-full border border-slate-300 rounded-lg px-3 py-2">
+              <option value="">-- Pilih Berkas di PPSPM --</option>
+            </select>
+          </div>
+          <div>
+            <label class="block font-medium mb-1">No Memo BOS PPSPM (Otomatis)</label>
+            <input type="text" id="ppspm-no-memo" readonly class="w-full bg-slate-100 border border-slate-300 rounded-lg px-3 py-2 font-mono text-slate-600">
+          </div>
+          <div>
+            <label class="block font-medium mb-1">Tanggal Terima PPSPM</label>
+            <input type="date" id="ppspm-tgl-terima" required class="w-full border border-slate-300 rounded-lg px-3 py-2">
+          </div>
+          <div>
+            <label class="block font-medium mb-1">Status Keputusan</label>
+            <select id="ppspm-status" onchange="togglePPSPMFields()" class="w-full border border-slate-300 rounded-lg px-3 py-2">
+              <option value="Diteruskan">Diteruskan ke Operator</option>
+              <option value="Dikembalikan">Dikembalikan</option>
+            </select>
+          </div>
+          <div id="ppspm-field-operator">
+            <label class="block font-medium mb-1">Tanggal Dikirim ke Operator</label>
+            <input type="date" id="ppspm-tgl-operator" class="w-full border border-slate-300 rounded-lg px-3 py-2">
+          </div>
+          <div id="ppspm-field-kembali" class="hidden">
+            <label class="block font-medium mb-1">Tanggal Pengembalian</label>
+            <input type="date" id="ppspm-tgl-kembali" class="w-full border border-slate-300 rounded-lg px-3 py-2">
+          </div>
+          <div class="md:col-span-2">
+            <label class="block font-medium mb-1">Catatan PPSPM</label>
+            <textarea id="ppspm-catatan" rows="2" placeholder="Catatan pengujian..." class="w-full border border-slate-300 rounded-lg px-3 py-2"></textarea>
+          </div>
+          <div class="md:col-span-2 flex justify-end gap-3 pt-2">
+            <button type="button" onclick="navigateTo('dashboard')" class="px-4 py-2 border border-slate-300 rounded-lg text-slate-600 hover:bg-slate-50">Batal</button>
+            <button type="submit" class="bg-orange-600 text-white px-5 py-2 rounded-lg hover:bg-orange-700 font-medium flex items-center gap-2 shadow-sm">
+              <i data-lucide="check-square" class="w-4 h-4"></i> Simpan Status PPSPM
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+
+    <!-- ================= HALAMAN 5: BENDAHARA ================= -->
+    <div id="page-bendahara" class="page-view hidden space-y-6">
+      <button onclick="navigateTo('dashboard')" class="text-xs font-bold text-orange-600 hover:text-orange-800 flex items-center gap-1 bg-white px-3 py-1.5 rounded-lg border border-orange-200 w-max shadow-sm">
+        <i data-lucide="arrow-left" class="w-4 h-4"></i> Kembali ke Dashboard
+      </button>
+
+      <div class="bg-white p-6 rounded-xl border border-orange-200 shadow-sm space-y-4 max-w-3xl mx-auto">
+        <div class="flex items-center gap-2 text-orange-600 font-bold border-b border-orange-100 pb-3">
+          <i data-lucide="wallet" class="w-5 h-5"></i> Halaman Modul Bendahara (Pencairan SP2D / Transfer)
+        </div>
+        <form id="form-bendahara" onsubmit="handleBendaharaSubmit(event)" class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+          <div class="md:col-span-2">
+            <label class="block font-medium mb-1">Pilih Berkas Lolos PPSPM</label>
+            <select id="bendahara-select-berkas" onchange="loadBendaharaData()" required class="w-full border border-slate-300 rounded-lg px-3 py-2">
+              <option value="">-- Pilih Berkas --</option>
+            </select>
+          </div>
+          <div>
+            <label class="block font-medium mb-1">No Memo BOS Bendahara (Otomatis)</label>
+            <input type="text" id="bendahara-no-memo" readonly class="w-full bg-slate-100 border border-slate-300 rounded-lg px-3 py-2 font-mono">
+          </div>
+          <div>
+            <label class="block font-medium mb-1">Nama Pembuat / Bendahara</label>
+            <input type="text" id="bendahara-pembuat" required placeholder="Nama Bendahara Pengeluaran" class="w-full border border-slate-300 rounded-lg px-3 py-2">
+          </div>
+          <div>
+            <label class="block font-medium mb-1">Tanggal SP2D</label>
+            <input type="date" id="bendahara-tgl-sp2d" required class="w-full border border-slate-300 rounded-lg px-3 py-2">
+          </div>
+          <div>
+            <label class="block font-medium mb-1">Tanggal Transfer Realisasi</label>
+            <input type="date" id="bendahara-tgl-transfer" required class="w-full border border-slate-300 rounded-lg px-3 py-2">
+          </div>
+          <div class="md:col-span-2 flex justify-end gap-3 pt-2">
+            <button type="button" onclick="navigateTo('dashboard')" class="px-4 py-2 border border-slate-300 rounded-lg text-slate-600 hover:bg-slate-50">Batal</button>
+            <button type="submit" class="bg-orange-600 text-white px-5 py-2 rounded-lg hover:bg-orange-700 font-medium flex items-center gap-2 shadow-sm">
+              <i data-lucide="check-circle" class="w-4 h-4"></i> Simpan Transaksi Bendahara
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+
+    <!-- ================= HALAMAN 6: ARSIP ================= -->
+    <div id="page-arsip" class="page-view hidden space-y-6">
+      <button onclick="navigateTo('dashboard')" class="text-xs font-bold text-orange-600 hover:text-orange-800 flex items-center gap-1 bg-white px-3 py-1.5 rounded-lg border border-orange-200 w-max shadow-sm">
+        <i data-lucide="arrow-left" class="w-4 h-4"></i> Kembali ke Dashboard
+      </button>
+
+      <div class="bg-white p-6 rounded-xl border border-orange-200 shadow-sm space-y-4 max-w-3xl mx-auto">
+        <div class="flex items-center gap-2 text-orange-600 font-bold border-b border-orange-100 pb-3">
+          <i data-lucide="archive" class="w-5 h-5"></i> Halaman Modul Pengarsipan (Rekap & Penyimpanan Fisik)
+        </div>
+        <form id="form-arsip" onsubmit="handleArsipSubmit(event)" class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+          <div class="md:col-span-2">
+            <label class="block font-medium mb-1">Pilih Berkas yang Sudah Dicarikan Bendahara</label>
+            <select id="arsip-select-berkas" onchange="loadArsipData()" required class="w-full border border-slate-300 rounded-lg px-3 py-2">
+              <option value="">-- Pilih Berkas Terproses --</option>
+            </select>
+          </div>
+          <div>
+            <label class="block font-medium mb-1">No Memo BOS Arsip (Otomatis)</label>
+            <input type="text" id="arsip-no-memo" readonly class="w-full bg-slate-100 border border-slate-300 rounded-lg px-3 py-2 font-mono">
+          </div>
+          <div>
+            <label class="block font-medium mb-1">Tanggal Rekapitulasi</label>
+            <input type="date" id="arsip-tgl-rekap" required class="w-full border border-slate-300 rounded-lg px-3 py-2">
+          </div>
+          <div>
+            <label class="block font-medium mb-1">Tanggal Masuk Arsip Fisik</label>
+            <input type="date" id="arsip-tgl-arsip" required class="w-full border border-slate-300 rounded-lg px-3 py-2">
+          </div>
+          <div class="md:col-span-2 flex justify-end gap-3 pt-2">
+            <button type="button" onclick="navigateTo('dashboard')" class="px-4 py-2 border border-slate-300 rounded-lg text-slate-600 hover:bg-slate-50">Batal</button>
+            <button type="submit" class="bg-orange-600 text-white px-5 py-2 rounded-lg hover:bg-orange-700 font-medium flex items-center gap-2 shadow-sm">
+              <i data-lucide="archive" class="w-4 h-4"></i> Finalisasi & Simpan Ke Arsip
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+
+    <!-- ================= HALAMAN 7: PENGAJUAN LEMBUR ================= -->
+    <div id="page-pengajuan-lembur" class="page-view hidden space-y-6">
+      <button onclick="navigateTo('dashboard')" class="text-xs font-bold text-orange-600 hover:text-orange-800 flex items-center gap-1 bg-white px-3 py-1.5 rounded-lg border border-orange-200 w-max shadow-sm">
+        <i data-lucide="arrow-left" class="w-4 h-4"></i> Kembali ke Dashboard
+      </button>
+
+      <div class="bg-white p-6 rounded-xl border border-orange-200 shadow-sm space-y-4 max-w-xl mx-auto">
+        <div class="flex items-center gap-2 text-orange-600 font-bold border-b border-orange-100 pb-3">
+          <i data-lucide="clock" class="w-5 h-5"></i> Halaman Form Pengajuan Lembur
+        </div>
+        <form id="form-pengajuan-lembur" onsubmit="handlePengajuanLembur(event)" class="space-y-3 text-sm">
+          <div>
+            <label class="block font-medium mb-1">Nama Ketua Tim</label>
+            <input type="text" required id="lembur-ketua" placeholder="Nama Ketua Tim" class="w-full border border-slate-300 rounded-lg px-3 py-2">
+          </div>
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="block font-medium mb-1">Tanggal Pengajuan</label>
+              <input type="date" required id="lembur-tgl-pengajuan" class="w-full border border-slate-300 rounded-lg px-3 py-2">
+            </div>
+            <div>
+              <label class="block font-medium mb-1">Tgl Mulai Lembur</label>
+              <input type="date" required id="lembur-tgl-mulai" class="w-full border border-slate-300 rounded-lg px-3 py-2">
+            </div>
+          </div>
+          <div>
+            <label class="block font-medium mb-1">Durasi Lembur (Jam)</label>
+            <input type="number" required id="lembur-durasi" min="1" placeholder="3" class="w-full border border-slate-300 rounded-lg px-3 py-2">
+          </div>
+          <div>
+            <label class="block font-medium mb-1">Peserta Lembur</label>
+            <div id="peserta-container" class="space-y-2">
+              <input type="text" placeholder="Nama Peserta 1" class="peserta-input w-full border border-slate-300 rounded-lg px-3 py-1.5">
+            </div>
+            <button type="button" onclick="addPesertaInput()" class="mt-2 text-xs text-orange-600 font-bold hover:underline flex items-center gap-1">
+              + Tambah Peserta
+            </button>
+          </div>
+          <div class="flex justify-end gap-3 pt-2">
+            <button type="button" onclick="navigateTo('dashboard')" class="px-4 py-2 border border-slate-300 rounded-lg text-slate-600 hover:bg-slate-50">Batal</button>
+            <button type="submit" class="bg-orange-600 text-white px-5 py-2 rounded-lg hover:bg-orange-700 font-medium shadow-sm">
+              Simpan Pengajuan Lembur
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+
+    <!-- ================= HALAMAN 8: LAPORAN LEMBUR (DENGAN IMAGE PREVIEW) ================= -->
+    <div id="page-laporan-lembur" class="page-view hidden space-y-6">
+      <button onclick="navigateTo('dashboard')" class="text-xs font-bold text-orange-600 hover:text-orange-800 flex items-center gap-1 bg-white px-3 py-1.5 rounded-lg border border-orange-200 w-max shadow-sm">
+        <i data-lucide="arrow-left" class="w-4 h-4"></i> Kembali ke Dashboard
+      </button>
+
+      <div class="bg-white p-6 rounded-xl border border-orange-200 shadow-sm space-y-4 max-w-xl mx-auto">
+        <div class="flex items-center gap-2 text-orange-600 font-bold border-b border-orange-100 pb-3">
+          <i data-lucide="clipboard-check" class="w-5 h-5"></i> Halaman Laporan Hasil Lembur
+        </div>
+        <form id="form-laporan-lembur" onsubmit="handleLaporanLembur(event)" class="space-y-3 text-sm">
+          <div>
+            <label class="block font-medium mb-1">Nama Peserta Lembur</label>
+            <input type="text" required id="lap-nama" placeholder="Nama Pegawai" class="w-full border border-slate-300 rounded-lg px-3 py-2">
+          </div>
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="block font-medium mb-1">Tanggal Lembur</label>
+              <input type="date" required id="lap-tgl" class="w-full border border-slate-300 rounded-lg px-3 py-2">
+            </div>
+            <div>
+              <label class="block font-medium mb-1">Jam Lembur</label>
+              <input type="time" required id="lap-jam" class="w-full border border-slate-300 rounded-lg px-3 py-2">
+            </div>
+          </div>
+          <div>
+            <label class="block font-medium mb-1">Output Hasil Lembur</label>
+            <textarea required id="lap-output" rows="3" placeholder="Uraian hasil kerja..." class="w-full border border-slate-300 rounded-lg px-3 py-2"></textarea>
+          </div>
+          
+          <!-- UPLOAD FOTO & PREVIEW -->
+          <div>
+            <label class="block font-medium mb-1">Upload Bukti Foto Kegiatan</label>
+            <input type="file" id="lap-foto" accept="image/*" onchange="previewImage(this, 'lap-foto-preview')" class="w-full border border-slate-300 rounded-lg px-3 py-1 text-xs">
+            
+            <div id="lap-foto-preview-container" class="mt-2 hidden">
+              <p class="text-xs text-slate-500 mb-1">Cuplikan Gambar Upload:</p>
+              <img id="lap-foto-preview" class="h-32 rounded-lg border border-slate-200 object-cover shadow-sm">
+            </div>
+          </div>
+
+          <div class="flex justify-end gap-3 pt-2">
+            <button type="button" onclick="navigateTo('dashboard')" class="px-4 py-2 border border-slate-300 rounded-lg text-slate-600 hover:bg-slate-50">Batal</button>
+            <button type="submit" class="bg-orange-600 text-white px-5 py-2 rounded-lg hover:bg-orange-700 font-medium shadow-sm">
+              Simpan Laporan Lembur
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+
+    <!-- ================= HALAMAN 9: BELANJA UP (DENGAN IMAGE PREVIEW) ================= -->
+    <div id="page-up" class="page-view hidden space-y-6">
+      <button onclick="navigateTo('dashboard')" class="text-xs font-bold text-orange-600 hover:text-orange-800 flex items-center gap-1 bg-white px-3 py-1.5 rounded-lg border border-orange-200 w-max shadow-sm">
+        <i data-lucide="arrow-left" class="w-4 h-4"></i> Kembali ke Dashboard
+      </button>
+
+      <div class="bg-white p-6 rounded-xl border border-orange-200 shadow-sm space-y-4 max-w-xl mx-auto">
+        <div class="flex items-center gap-2 text-orange-600 font-bold border-b border-orange-100 pb-3">
+          <i data-lucide="shopping-cart" class="w-5 h-5"></i> Halaman Input Belanja Uang Persediaan (UP)
+        </div>
+        <form id="form-up" onsubmit="handleUPSubmit(event)" class="space-y-4 text-sm">
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label class="block font-medium mb-1">Tanggal Belanja</label>
+              <input type="date" required id="up-tgl" class="w-full border border-slate-300 rounded-lg px-3 py-2">
+            </div>
+            <div>
+              <label class="block font-medium mb-1">Jenis Belanja</label>
+              <select id="up-jenis" required class="w-full border border-slate-300 rounded-lg px-3 py-2">
+                <option value="ATK">ATK (Alat Tulis Kantor)</option>
+                <option value="ARK">ARK (Alat Rumah Tangga Kantor)</option>
+                <option value="Keperluan Kantor">Keperluan Kantor</option>
+              </select>
+            </div>
+          </div>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label class="block font-medium mb-1">Nama Toko / Penyedia</label>
+              <input type="text" required id="up-toko" placeholder="Nama Toko" class="w-full border border-slate-300 rounded-lg px-3 py-2">
+            </div>
+            <div>
+              <label class="block font-medium mb-1">Nominal Pembayaran (Rp)</label>
+              <input type="number" required id="up-nominal" placeholder="0" class="w-full border border-slate-300 rounded-lg px-3 py-2">
+            </div>
+          </div>
+
+          <!-- UPLOAD NOTA & PREVIEW -->
+          <div>
+            <label class="block font-medium mb-1">Upload Bukti Nota / Kuitansi Gambar</label>
+            <input type="file" id="up-bukti" accept="image/*" onchange="previewImage(this, 'up-bukti-preview')" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-xs">
+            
+            <div id="up-bukti-preview-container" class="mt-2 hidden">
+              <p class="text-xs text-slate-500 mb-1">Cuplikan Gambar Nota:</p>
+              <img id="up-bukti-preview" class="h-32 rounded-lg border border-slate-200 object-cover shadow-sm">
+            </div>
+          </div>
+
+          <div class="flex justify-end gap-3 pt-2">
+            <button type="button" onclick="navigateTo('dashboard')" class="px-4 py-2 border border-slate-300 rounded-lg text-slate-600 hover:bg-slate-50">Batal</button>
+            <button type="submit" class="bg-orange-600 text-white px-5 py-2 rounded-lg hover:bg-orange-700 font-medium shadow-sm">
+              Simpan Belanja UP
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- JAVASCRIPT LOGIC NAVIGASI, DATA, & PREVIEW GAMBAR -->
+  <script>
+    // STORE DATA KOSONG
+    let dataBerkas = [];
+    let dataPengajuanLembur = [];
+    let dataLaporanLembur = [];
+    let dataBelanjaUP = [];
+
+    window.addEventListener('DOMContentLoaded', () => {
+      lucide.createIcons();
+      renderAllTables();
+      generateNextSMMemo();
+    });
+
+    // SISTEM PREVIEW GAMBAR REALTIME (MENGUBAH FILE JADI DATA BASE64)
+    function previewImage(input, previewImgId) {
+      const file = input.files[0];
+      const previewImg = document.getElementById(previewImgId);
+      const previewContainer = document.getElementById(previewImgId + '-container');
+
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          previewImg.src = e.target.result;
+          previewContainer.classList.remove('hidden');
+        }
+        reader.readAsDataURL(file);
+      } else {
+        previewContainer.classList.add('hidden');
+      }
+    }
+
+    // PENGALIHAN HALAMAN
+    function navigateTo(pageId) {
+      if(pageId === 'dashboard') pageId = 'page-dashboard';
+      
+      document.querySelectorAll('.page-view').forEach(p => p.classList.add('hidden'));
+      const activePage = document.getElementById(pageId);
+      if(activePage) {
+        activePage.classList.remove('hidden');
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
+    }
+
+    function renderAllTables() {
+      renderMonitoringTable();
+      renderLemburTable();
+      renderLaporanLemburTable();
+      renderUPTable();
+      updateMetrics();
+    }
+
+    // 1. MONITORING BERKAS KEUANGAN
+    function renderMonitoringTable() {
+      const tbody = document.getElementById('monitoring-tbody');
+      tbody.innerHTML = '';
+
+      if (dataBerkas.length === 0) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="5" class="text-center py-8 text-slate-400 text-sm">
+              Belum ada data berkas keuangan. Silakan pilih modul input di atas.
+            </td>
+          </tr>
+        `;
+      } else {
+        dataBerkas.forEach(b => {
+          let statusBadge = '';
+          if (b.statusPosisi === 'Subject Matter') {
+            statusBadge = `<span class="px-2.5 py-1 bg-slate-100 text-slate-700 rounded-full text-xs font-semibold">Subject Matter</span>`;
+          } else if (b.statusPosisi === 'PPK') {
+            statusBadge = `<span class="px-2.5 py-1 bg-amber-100 text-amber-800 rounded-full text-xs font-semibold">PPK</span>`;
+          } else if (b.statusPosisi === 'PPSPM') {
+            statusBadge = `<span class="px-2.5 py-1 bg-blue-100 text-blue-800 rounded-full text-xs font-semibold">PPSPM</span>`;
+          } else if (b.statusPosisi === 'Bendahara') {
+            statusBadge = `<span class="px-2.5 py-1 bg-orange-100 text-orange-800 rounded-full text-xs font-semibold">Bendahara (SP2D)</span>`;
+          } else if (b.statusPosisi === 'Dikembalikan') {
+            statusBadge = `<span class="px-2.5 py-1 bg-rose-100 text-rose-800 rounded-full text-xs font-semibold">Dikembalikan</span>`;
+          } else {
+            statusBadge = `<span class="px-2.5 py-1 bg-emerald-100 text-emerald-800 rounded-full text-xs font-semibold">Selesai & Arsip</span>`;
+          }
+
+          let detailLog = `SM Penyerahan: ${b.smTglPenyerahan || '-'}`;
+          if(b.ppkTglTerima) detailLog += `<br>Terima PPK: ${b.ppkTglTerima}`;
+          if(b.ppspmTglTerima) detailLog += `<br>Terima SPM: ${b.ppspmTglTerima}`;
+          if(b.bendaharaTglSP2D) detailLog += `<br>SP2D: ${b.bendaharaTglSP2D}`;
+          if(b.arsipTglArsip) detailLog += `<br>Arsip Fisik: ${b.arsipTglArsip}`;
+
+          let catatanLog = b.ppkCatatan || b.ppspmCatatan || '-';
+
+          const tr = document.createElement('tr');
+          tr.className = 'hover:bg-orange-50/50 transition';
+          tr.innerHTML = `
+            <td class="px-4 py-3">
+              <div class="font-semibold text-slate-800">${b.smPembuat}</div>
+              <div class="text-xs text-slate-400 font-mono">${b.smNoMemo}</div>
+            </td>
+            <td class="px-4 py-3 max-w-xs">${b.smUraian}</td>
+            <td class="px-4 py-3">${statusBadge}</td>
+            <td class="px-4 py-3 text-xs leading-relaxed">${detailLog}</td>
+            <td class="px-4 py-3 text-xs text-slate-500 italic">${catatanLog}</td>
+          `;
+          tbody.appendChild(tr);
+        });
+      }
+    }
+
+    // 2. PENGAJUAN LEMBUR
+    function renderLemburTable() {
+      const tbody = document.getElementById('lembur-tbody');
+      tbody.innerHTML = '';
+
+      if (dataPengajuanLembur.length === 0) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="4" class="text-center py-6 text-slate-400 text-sm">
+              Belum ada pengajuan lembur.
+            </td>
+          </tr>
+        `;
+      } else {
+        dataPengajuanLembur.forEach(l => {
+          const tr = document.createElement('tr');
+          tr.className = 'hover:bg-orange-50/50 transition';
+          tr.innerHTML = `
+            <td class="px-4 py-3 font-semibold text-slate-800">${l.ketua}</td>
+            <td class="px-4 py-3 text-xs">
+              <div>Pengajuan: ${l.tglPengajuan}</div>
+              <div>Mulai: ${l.tglMulai}</div>
+            </td>
+            <td class="px-4 py-3 font-medium text-amber-700">${l.durasi} Jam</td>
+            <td class="px-4 py-3 text-xs text-slate-600">${l.peserta.join(', ')}</td>
+          `;
+          tbody.appendChild(tr);
+        });
+      }
+    }
+
+    // 3. LAPORAN LEMBUR (MENAMPILKAN GAMBAR ASLI / THUMBNAIL)
+    function renderLaporanLemburTable() {
+      const tbody = document.getElementById('laporan-lembur-tbody');
+      tbody.innerHTML = '';
+
+      if (dataLaporanLembur.length === 0) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="4" class="text-center py-6 text-slate-400 text-sm">
+              Belum ada laporan hasil lembur.
+            </td>
+          </tr>
+        `;
+      } else {
+        dataLaporanLembur.forEach(lap => {
+          const tr = document.createElement('tr');
+          tr.className = 'hover:bg-orange-50/50 transition';
+          
+          let fotoHtml = lap.fotoSrc 
+            ? `<img src="${lap.fotoSrc}" class="w-12 h-12 object-cover rounded-lg border border-slate-200 shadow-sm cursor-pointer hover:scale-125 transition-transform" onclick="window.open('${lap.fotoSrc}')" title="Klik untuk memperbesar">`
+            : `<span class="text-xs text-slate-400">Tidak ada foto</span>`;
+
+          tr.innerHTML = `
+            <td class="px-4 py-3 font-semibold text-slate-800">${lap.nama}</td>
+            <td class="px-4 py-3 text-xs">${lap.tgl} (${lap.jam})</td>
+            <td class="px-4 py-3 text-xs max-w-xs">${lap.output}</td>
+            <td class="px-4 py-3">${fotoHtml}</td>
+          `;
+          tbody.appendChild(tr);
+        });
+      }
+    }
+
+    // 4. BELANJA UP (MENAMPILKAN GAMBAR NOTA / KUITANSI)
+    function renderUPTable() {
+      const tbody = document.getElementById('up-tbody');
+      tbody.innerHTML = '';
+
+      if (dataBelanjaUP.length === 0) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="5" class="text-center py-6 text-slate-400 text-sm">
+              Belum ada data belanja UP.
+            </td>
+          </tr>
+        `;
+      } else {
+        dataBelanjaUP.forEach(up => {
+          const tr = document.createElement('tr');
+          tr.className = 'hover:bg-orange-50/50 transition';
+
+          let notaHtml = up.buktiSrc 
+            ? `<img src="${up.buktiSrc}" class="w-12 h-12 object-cover rounded-lg border border-slate-200 shadow-sm cursor-pointer hover:scale-125 transition-transform" onclick="window.open('${up.buktiSrc}')" title="Klik untuk memperbesar">`
+            : `<span class="text-xs text-slate-400">Tidak ada bukti</span>`;
+
+          tr.innerHTML = `
+            <td class="px-4 py-3 text-xs font-medium">${up.tgl}</td>
+            <td class="px-4 py-3"><span class="px-2 py-0.5 bg-slate-100 rounded text-xs font-semibold">${up.jenis}</span></td>
+            <td class="px-4 py-3 font-medium text-slate-800">${up.toko}</td>
+            <td class="px-4 py-3 font-bold text-emerald-600">Rp ${Number(up.nominal).toLocaleString('id-ID')}</td>
+            <td class="px-4 py-3">${notaHtml}</td>
+          `;
+          tbody.appendChild(tr);
+        });
+      }
+    }
+
+    function updateMetrics() {
+      document.getElementById('stat-total').innerText = dataBerkas.length;
+      document.getElementById('stat-lembur').innerText = dataPengajuanLembur.length;
+      document.getElementById('stat-laporan-lembur').innerText = dataLaporanLembur.length;
+      document.getElementById('stat-up').innerText = dataBelanjaUP.length;
+    }
+
+    function generateNextSMMemo() {
+      const count = dataBerkas.length + 1;
+      document.getElementById('sm-no-memo').value = `MEMO-SM/2026/00${count}`;
+    }
+
+    function populateDropdowns() {
+      const ppkSelect = document.getElementById('ppk-select-berkas');
+      const ppspmSelect = document.getElementById('ppspm-select-berkas');
+      const bendaharaSelect = document.getElementById('bendahara-select-berkas');
+      const arsipSelect = document.getElementById('arsip-select-berkas');
+
+      ppkSelect.innerHTML = '<option value="">-- Pilih Berkas --</option>';
+      ppspmSelect.innerHTML = '<option value="">-- Pilih Berkas di PPSPM --</option>';
+      bendaharaSelect.innerHTML = '<option value="">-- Pilih Berkas --</option>';
+      arsipSelect.innerHTML = '<option value="">-- Pilih Berkas --</option>';
+
+      dataBerkas.forEach(b => {
+        if (b.statusPosisi === 'Subject Matter' || b.statusPosisi === 'PPK') {
+          ppkSelect.innerHTML += `<option value="${b.id}">${b.smNoMemo} - ${b.smPembuat}</option>`;
+        }
+        if (b.statusPosisi === 'PPSPM' || (b.statusPosisi === 'PPK' && b.ppkStatus === 'Diteruskan')) {
+          ppspmSelect.innerHTML += `<option value="${b.id}">${b.smNoMemo} / ${b.ppkNoMemo || ''}</option>`;
+        }
+        if (b.statusPosisi === 'Bendahara' || (b.statusPosisi === 'PPSPM' && b.ppspmStatus === 'Diteruskan')) {
+          bendaharaSelect.innerHTML += `<option value="${b.id}">${b.smNoMemo} / ${b.ppspmNoMemo || ''}</option>`;
+        }
+        if (b.statusPosisi === 'Bendahara' && b.bendaharaTglSP2D) {
+          arsipSelect.innerHTML += `<option value="${b.id}">${b.smNoMemo} / ${b.bendaharaNoMemo || ''}</option>`;
+        }
+      });
+    }
+
+    // SUBMIT HANDLERS
+    function handleSubjectMatterSubmit(e) {
+      e.preventDefault();
+      const newBerkas = {
+        id: Date.now().toString(),
+        smNoMemo: document.getElementById('sm-no-memo').value,
+        smPembuat: document.getElementById('sm-pembuat').value,
+        smUraian: document.getElementById('sm-uraian').value,
+        smTglPenyerahan: document.getElementById('sm-tgl-penyerahan').value,
+        statusPosisi: 'PPK',
+        ppkNoMemo: '', ppkTglTerima: '', ppkPenerima: '', ppkStatus: '', ppkTglPPSPM: '', ppkCatatan: '',
+        ppspmNoMemo: '', ppspmTglTerima: '', ppspmStatus: '', ppspmTglOperator: '', ppspmCatatan: '',
+        bendaharaNoMemo: '', bendaharaPembuat: '', bendaharaTglSP2D: '', bendaharaTglTransfer: '',
+        arsipNoMemo: '', arsipTglRekap: '', arsipTglArsip: ''
+      };
+
+      dataBerkas.push(newBerkas);
+      alert('Data Subject Matter Berhasil Disimpan!');
+      document.getElementById('form-sm').reset();
+      generateNextSMMemo();
+      renderAllTables();
+      populateDropdowns();
+      navigateTo('dashboard');
+    }
+
+    function loadPPKData() {
+      const id = document.getElementById('ppk-select-berkas').value;
+      if (!id) return;
+      document.getElementById('ppk-no-memo').value = `MEMO-PPK/2026/00${id.slice(-3)}`;
+    }
+
+    function togglePPKFields() {
+      const status = document.getElementById('ppk-status').value;
+      if (status === 'Dikembalikan') {
+        document.getElementById('ppk-field-teruskan').classList.add('hidden');
+        document.getElementById('ppk-field-kembali').classList.remove('hidden');
+      } else {
+        document.getElementById('ppk-field-teruskan').classList.remove('hidden');
+        document.getElementById('ppk-field-kembali').classList.add('hidden');
+      }
+    }
+
+    function handlePPKSubmit(e) {
+      e.preventDefault();
+      const id = document.getElementById('ppk-select-berkas').value;
+      const berkas = dataBerkas.find(b => b.id === id);
+      if(!berkas) return;
+
+      berkas.ppkNoMemo = document.getElementById('ppk-no-memo').value;
+      berkas.ppkTglTerima = document.getElementById('ppk-tgl-terima').value;
+      berkas.ppkPenerima = document.getElementById('ppk-penerima').value;
+      berkas.ppkStatus = document.getElementById('ppk-status').value;
+      berkas.ppkCatatan = document.getElementById('ppk-catatan').value;
+
+      if(berkas.ppkStatus === 'Dikembalikan') {
+        berkas.statusPosisi = 'Dikembalikan';
+      } else {
+        berkas.statusPosisi = 'PPSPM';
+        berkas.ppkTglPPSPM = document.getElementById('ppk-tgl-ppspm').value;
+      }
+
+      alert('Data Verifikasi PPK Berhasil Disimpan!');
+      renderAllTables();
+      populateDropdowns();
+      navigateTo('dashboard');
+    }
+
+    function loadPPSPMData() {
+      const id = document.getElementById('ppspm-select-berkas').value;
+      if (!id) return;
+      document.getElementById('ppspm-no-memo').value = `MEMO-SPM/2026/00${id.slice(-3)}`;
+    }
+
+    function togglePPSPMFields() {
+      const status = document.getElementById('ppspm-status').value;
+      if (status === 'Dikembalikan') {
+        document.getElementById('ppspm-field-operator').classList.add('hidden');
+        document.getElementById('ppspm-field-kembali').classList.remove('hidden');
+      } else {
+        document.getElementById('ppspm-field-operator').classList.remove('hidden');
+        document.getElementById('ppspm-field-kembali').classList.add('hidden');
+      }
+    }
+
+    function handlePPSPMSubmit(e) {
+      e.preventDefault();
+      const id = document.getElementById('ppspm-select-berkas').value;
+      const berkas = dataBerkas.find(b => b.id === id);
+      if(!berkas) return;
+
+      berkas.ppspmNoMemo = document.getElementById('ppspm-no-memo').value;
+      berkas.ppspmTglTerima = document.getElementById('ppspm-tgl-terima').value;
+      berkas.ppspmStatus = document.getElementById('ppspm-status').value;
+      berkas.ppspmCatatan = document.getElementById('ppspm-catatan').value;
+
+      if(berkas.ppspmStatus === 'Dikembalikan') {
+        berkas.statusPosisi = 'Dikembalikan';
+      } else {
+        berkas.statusPosisi = 'Bendahara';
+        berkas.ppspmTglOperator = document.getElementById('ppspm-tgl-operator').value;
+      }
+
+      alert('Data PPSPM Berhasil Disimpan!');
+      renderAllTables();
+      populateDropdowns();
+      navigateTo('dashboard');
+    }
+
+    function loadBendaharaData() {
+      const id = document.getElementById('bendahara-select-berkas').value;
+      if (!id) return;
+      document.getElementById('bendahara-no-memo').value = `MEMO-BND/2026/00${id.slice(-3)}`;
+    }
+
+    function handleBendaharaSubmit(e) {
+      e.preventDefault();
+      const id = document.getElementById('bendahara-select-berkas').value;
+      const berkas = dataBerkas.find(b => b.id === id);
+      if(!berkas) return;
+
+      berkas.bendaharaNoMemo = document.getElementById('bendahara-no-memo').value;
+      berkas.bendaharaPembuat = document.getElementById('bendahara-pembuat').value;
+      berkas.bendaharaTglSP2D = document.getElementById('bendahara-tgl-sp2d').value;
+      berkas.bendaharaTglTransfer = document.getElementById('bendahara-tgl-transfer').value;
+
+      alert('Data Transaksi Bendahara Berhasil Disimpan!');
+      renderAllTables();
+      populateDropdowns();
+      navigateTo('dashboard');
+    }
+
+    function loadArsipData() {
+      const id = document.getElementById('arsip-select-berkas').value;
+      if (!id) return;
+      document.getElementById('arsip-no-memo').value = `MEMO-ARS/2026/00${id.slice(-3)}`;
+    }
+
+    function handleArsipSubmit(e) {
+      e.preventDefault();
+      const id = document.getElementById('arsip-select-berkas').value;
+      const berkas = dataBerkas.find(b => b.id === id);
+      if(!berkas) return;
+
+      berkas.arsipNoMemo = document.getElementById('arsip-no-memo').value;
+      berkas.arsipTglRekap = document.getElementById('arsip-tgl-rekap').value;
+      berkas.arsipTglArsip = document.getElementById('arsip-tgl-arsip').value;
+      berkas.statusPosisi = 'Selesai & Arsip';
+
+      alert('Data Berkas Berhasil Disimpan ke Modul Arsip!');
+      renderAllTables();
+      populateDropdowns();
+      navigateTo('dashboard');
+    }
+
+    function addPesertaInput() {
+      const container = document.getElementById('peserta-container');
+      const input = document.createElement('input');
+      input.type = 'text';
+      input.placeholder = `Nama Peserta ${container.children.length + 1}`;
+      input.className = 'peserta-input w-full border border-slate-300 rounded-lg px-3 py-1.5 mt-1';
+      container.appendChild(input);
+    }
+
+    function handlePengajuanLembur(e) {
+      e.preventDefault();
+      const pesertaEls = document.querySelectorAll('.peserta-input');
+      let listPeserta = [];
+      pesertaEls.forEach(el => {
+        if(el.value.trim() !== '') listPeserta.push(el.value.trim());
+      });
+
+      const newLembur = {
+        ketua: document.getElementById('lembur-ketua').value,
+        tglPengajuan: document.getElementById('lembur-tgl-pengajuan').value,
+        tglMulai: document.getElementById('lembur-tgl-mulai').value,
+        durasi: document.getElementById('lembur-durasi').value,
+        peserta: listPeserta
+      };
+
+      dataPengajuanLembur.push(newLembur);
+      alert('Pengajuan Lembur Berhasil Disimpan!');
+      document.getElementById('form-pengajuan-lembur').reset();
+      renderAllTables();
+      navigateTo('dashboard');
+    }
+
+    function handleLaporanLembur(e) {
+      e.preventDefault();
+      const previewImg = document.getElementById('lap-foto-preview');
+      
+      const newLaporan = {
+        nama: document.getElementById('lap-nama').value,
+        tgl: document.getElementById('lap-tgl').value,
+        jam: document.getElementById('lap-jam').value,
+        output: document.getElementById('lap-output').value,
+        fotoSrc: previewImg.src !== '' ? previewImg.src : null
+      };
+
+      dataLaporanLembur.push(newLaporan);
+      alert('Laporan Hasil Lembur Berhasil Disimpan!');
+      document.getElementById('form-laporan-lembur').reset();
+      document.getElementById('lap-foto-preview-container').classList.add('hidden');
+      renderAllTables();
+      navigateTo('dashboard');
+    }
+
+    function handleUPSubmit(e) {
+      e.preventDefault();
+      const previewImg = document.getElementById('up-bukti-preview');
+      
+      const newUP = {
+        tgl: document.getElementById('up-tgl').value,
+        jenis: document.getElementById('up-jenis').value,
+        toko: document.getElementById('up-toko').value,
+        nominal: document.getElementById('up-nominal').value,
+        buktiSrc: previewImg.src !== '' ? previewImg.src : null
+      };
+
+      dataBelanjaUP.push(newUP);
+      alert('Data Belanja UP Berhasil Disimpan!');
+      document.getElementById('form-up').reset();
+      document.getElementById('up-bukti-preview-container').classList.add('hidden');
+      renderAllTables();
+      navigateTo('dashboard');
+    }
+
+    function filterMonitoringTable() {
+      const query = document.getElementById('search-monitoring').value.toLowerCase();
+      const rows = document.querySelectorAll('#monitoring-tbody tr');
+
+      rows.forEach(row => {
+        const text = row.innerText.toLowerCase();
+        row.style.display = text.includes(query) ? '' : 'none';
+      });
+    }
+
+    // EXPORT TO MULTI-SHEET EXCEL
+    function exportAllToExcel() {
+      if (dataBerkas.length === 0 && dataPengajuanLembur.length === 0 && dataLaporanLembur.length === 0 && dataBelanjaUP.length === 0) {
+        alert('Belum ada data sama sekali untuk di-export!');
+        return;
+      }
+
+      const workbook = XLSX.utils.book_new();
+
+      if(dataBerkas.length > 0) {
+        const wsBerkas = XLSX.utils.json_to_sheet(dataBerkas.map((b, i) => ({
+          'No': i + 1, 'Memo SM': b.smNoMemo, 'Pembuat': b.smPembuat, 'Uraian': b.smUraian,
+          'Tgl Penyerahan': b.smTglPenyerahan, 'Status': b.statusPosisi, 'Memo PPK': b.ppkNoMemo,
+          'Memo PPSPM': b.ppspmNoMemo, 'Memo Bendahara': b.bendaharaNoMemo, 'Tgl SP2D': b.bendaharaTglSP2D,
+          'Memo Arsip': b.arsipNoMemo, 'Tgl Arsip': b.arsipTglArsip
+        })));
+        XLSX.utils.book_append_sheet(workbook, wsBerkas, "Alur_Berkas_Keuangan");
+      }
+
+      if(dataPengajuanLembur.length > 0) {
+        const wsLembur = XLSX.utils.json_to_sheet(dataPengajuanLembur.map((l, i) => ({
+          'No': i + 1, 'Ketua Tim': l.ketua, 'Tgl Pengajuan': l.tglPengajuan, 'Tgl Mulai': l.tglMulai,
+          'Durasi (Jam)': l.durasi, 'Peserta': l.peserta.join(', ')
+        })));
+        XLSX.utils.book_append_sheet(workbook, wsLembur, "Pengajuan_Lembur");
+      }
+
+      if(dataLaporanLembur.length > 0) {
+        const wsLapLembur = XLSX.utils.json_to_sheet(dataLaporanLembur.map((lap, i) => ({
+          'No': i + 1, 'Nama Peserta': lap.nama, 'Tgl Lembur': lap.tgl, 'Jam Lembur': lap.jam,
+          'Output Pekerjaan': lap.output
+        })));
+        XLSX.utils.book_append_sheet(workbook, wsLapLembur, "Laporan_Lembur");
+      }
+
+      if(dataBelanjaUP.length > 0) {
+        const wsUP = XLSX.utils.json_to_sheet(dataBelanjaUP.map((up, i) => ({
+          'No': i + 1, 'Tgl Belanja': up.tgl, 'Jenis Belanja': up.jenis, 'Toko/Penyedia': up.toko,
+          'Nominal (Rp)': up.nominal
+        })));
+        XLSX.utils.book_append_sheet(workbook, wsUP, "Belanja_UP");
+      }
+
+      XLSX.writeFile(workbook, `Rekap_MONEV_BPS_Lengkap_${new Date().toISOString().slice(0,10)}.xlsx`);
+    }
+  </script>
+</body>
+</html>
