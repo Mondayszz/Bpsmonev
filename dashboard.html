@@ -21,22 +21,22 @@
 
   <link rel="stylesheet" href="style.css">
 </head>
-<body class="bg-slate-100 font-sans text-slate-800 flex min-h-screen">
+<body class="bg-slate-50 font-sans text-slate-800 flex min-h-screen">
 
   <!-- SIDEBAR NAVIGASI UTAMA -->
-  <aside class="w-64 bg-white border-r border-slate-200 flex flex-col justify-between shrink-0 sticky top-0 h-screen overflow-y-auto">
+  <aside class="w-64 bg-white border-r border-slate-100 flex flex-col justify-between shrink-0 sticky top-0 h-screen overflow-y-auto">
     <div>
-      <div class="p-4 border-b border-slate-100 flex items-center gap-3 bg-orange-500 text-white">
-        <div class="bg-white p-1 rounded-lg flex items-center justify-center w-9 h-9 shrink-0">
+      <div class="p-5 border-b border-slate-100 flex items-center gap-3 bg-gradient-to-br from-orange-500 to-amber-500 text-white">
+        <div class="bg-white/95 p-1.5 rounded-xl flex items-center justify-center w-10 h-10 shrink-0 shadow-sm">
           <img src="https://upload.wikimedia.org/wikipedia/commons/2/28/Lambang_Badan_Pusat_Statistik_%28BPS%29_Indonesia.svg" alt="BPS Logo" class="max-h-full">
         </div>
         <div>
-          <h1 class="font-bold text-sm leading-tight">MONEV BPS</h1>
-          <p class="text-[10px] text-orange-100">Kota Kotamobagu</p>
+          <h1 class="font-bold text-sm leading-tight tracking-tight">MONEV BPS</h1>
+          <p class="text-[10px] text-orange-50">Kota Kotamobagu</p>
         </div>
       </div>
 
-      <nav class="p-3 space-y-1 text-xs font-medium">
+      <nav class="p-3 space-y-1.5 text-xs font-medium">
         <!-- BERANDA -->
         <button data-page="page-beranda" onclick="navigateTo('page-beranda')" class="w-full flex items-center gap-2.5 px-3 py-2 text-slate-700 hover:bg-orange-50 hover:text-orange-600 rounded-lg transition font-bold">
           <i data-lucide="home" class="w-4 h-4 text-orange-600"></i>
@@ -51,7 +51,7 @@
 
         <!-- INPUT MEMO SUBMENU -->
         <div data-group="group-input-memo">
-          <button onclick="toggleSubmenu('sub-input-memo')" class="w-full flex items-center justify-between px-3 py-2 text-slate-700 hover:bg-orange-50 hover:text-orange-600 rounded-lg transition">
+          <button onclick="toggleSubmenu('sub-input-memo')" class="w-full flex items-center justify-between px-3 py-2.5 text-slate-700 hover:bg-orange-50 hover:text-orange-600 rounded-xl transition">
             <span class="flex items-center gap-2.5"><i data-lucide="file-plus" class="w-4 h-4 text-orange-600"></i> Input Memo</span>
             <i data-lucide="chevron-down" class="w-3.5 h-3.5"></i>
           </button>
@@ -66,7 +66,7 @@
 
         <!-- LEMBUR SUBMENU -->
         <div data-group="group-lembur">
-          <button onclick="toggleSubmenu('sub-lembur')" class="w-full flex items-center justify-between px-3 py-2 text-slate-700 hover:bg-orange-50 hover:text-orange-600 rounded-lg transition">
+          <button onclick="toggleSubmenu('sub-lembur')" class="w-full flex items-center justify-between px-3 py-2.5 text-slate-700 hover:bg-orange-50 hover:text-orange-600 rounded-xl transition">
             <span class="flex items-center gap-2.5"><i data-lucide="clock" class="w-4 h-4 text-orange-600"></i> Lembur</span>
             <i data-lucide="chevron-down" class="w-3.5 h-3.5"></i>
           </button>
@@ -78,7 +78,7 @@
 
         <!-- BELANJA UP SUBMENU -->
         <div data-group="group-up">
-          <button onclick="toggleSubmenu('sub-up')" class="w-full flex items-center justify-between px-3 py-2 text-slate-700 hover:bg-orange-50 hover:text-orange-600 rounded-lg transition">
+          <button onclick="toggleSubmenu('sub-up')" class="w-full flex items-center justify-between px-3 py-2.5 text-slate-700 hover:bg-orange-50 hover:text-orange-600 rounded-xl transition">
             <span class="flex items-center gap-2.5"><i data-lucide="shopping-cart" class="w-4 h-4 text-orange-600"></i> Belanja UP</span>
             <i data-lucide="chevron-down" class="w-3.5 h-3.5"></i>
           </button>
@@ -90,7 +90,7 @@
 
         <!-- ARSIP SUBMENU -->
         <div data-group="group-arsip">
-          <button onclick="toggleSubmenu('sub-arsip')" class="w-full flex items-center justify-between px-3 py-2 text-slate-700 hover:bg-orange-50 hover:text-orange-600 rounded-lg transition">
+          <button onclick="toggleSubmenu('sub-arsip')" class="w-full flex items-center justify-between px-3 py-2.5 text-slate-700 hover:bg-orange-50 hover:text-orange-600 rounded-xl transition">
             <span class="flex items-center gap-2.5"><i data-lucide="archive" class="w-4 h-4 text-orange-600"></i> Arsip</span>
             <i data-lucide="chevron-down" class="w-3.5 h-3.5"></i>
           </button>
@@ -128,7 +128,7 @@
   </aside>
 
   <!-- CONTENT VIEW -->
-  <main class="flex-1 p-6 overflow-y-auto space-y-6">
+  <main class="flex-1 p-6 md:p-8 overflow-y-auto space-y-6">
 
     <!-- ================= 1. BERANDA ================= -->
     <div id="page-beranda" class="page-view space-y-6">
@@ -310,11 +310,11 @@
     <div id="page-dashboard-all" class="page-view hidden space-y-6">
       <h3 class="font-bold text-slate-800 text-lg border-b pb-2">Dashboard Monitoring Semua Input Data</h3>
       
-      <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-        <div class="p-4 bg-slate-50 border-b font-bold text-sm">Monitoring Alur Berkas Keuangan (Memo)</div>
+      <div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+        <div class="p-4 bg-slate-50/70 border-b border-slate-100 font-bold text-sm text-slate-700">Monitoring Alur Berkas Keuangan (Memo)</div>
         <div class="overflow-x-auto">
           <table class="w-full text-left text-sm text-slate-600">
-            <thead class="bg-slate-100 text-xs font-bold uppercase">
+            <thead class="bg-slate-50 text-[11px] font-bold uppercase text-slate-500 tracking-wide">
               <tr><th class="px-4 py-3">Subject Matter</th><th class="px-4 py-3">Uraian</th><th class="px-4 py-3">Status</th><th class="px-4 py-3">Tanggal</th><th class="px-4 py-3">Catatan</th></tr>
             </thead>
             <tbody id="tbody-monitoring-berkas" class="divide-y divide-slate-100"></tbody>
@@ -323,21 +323,21 @@
       </div>
 
       <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-          <div class="p-4 bg-slate-50 border-b font-bold text-sm">Monitoring Laporan Lembur</div>
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+          <div class="p-4 bg-slate-50/70 border-b border-slate-100 font-bold text-sm text-slate-700">Monitoring Laporan Lembur</div>
           <div class="overflow-x-auto">
             <table class="w-full text-left text-sm text-slate-600">
-              <thead class="bg-slate-100 text-xs font-bold uppercase"><tr><th class="px-4 py-3">Nama</th><th class="px-4 py-3">Tanggal</th><th class="px-4 py-3">Output</th><th class="px-4 py-3">Foto</th></tr></thead>
+              <thead class="bg-slate-50 text-[11px] font-bold uppercase text-slate-500 tracking-wide"><tr><th class="px-4 py-3">Nama</th><th class="px-4 py-3">Tanggal</th><th class="px-4 py-3">Output</th><th class="px-4 py-3">Foto</th></tr></thead>
               <tbody id="tbody-laporan-lembur" class="divide-y divide-slate-100"></tbody>
             </table>
           </div>
         </div>
 
-        <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-          <div class="p-4 bg-slate-50 border-b font-bold text-sm">Monitoring Belanja UP</div>
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+          <div class="p-4 bg-slate-50/70 border-b border-slate-100 font-bold text-sm text-slate-700">Monitoring Belanja UP</div>
           <div class="overflow-x-auto">
             <table class="w-full text-left text-sm text-slate-600">
-              <thead class="bg-slate-100 text-xs font-bold uppercase"><tr><th class="px-4 py-3">Tanggal</th><th class="px-4 py-3">Jenis</th><th class="px-4 py-3">Toko</th><th class="px-4 py-3">Nominal</th><th class="px-4 py-3">Nota</th></tr></thead>
+              <thead class="bg-slate-50 text-[11px] font-bold uppercase text-slate-500 tracking-wide"><tr><th class="px-4 py-3">Tanggal</th><th class="px-4 py-3">Jenis</th><th class="px-4 py-3">Toko</th><th class="px-4 py-3">Nominal</th><th class="px-4 py-3">Nota</th></tr></thead>
               <tbody id="tbody-belanja-up" class="divide-y divide-slate-100"></tbody>
             </table>
           </div>
@@ -346,46 +346,46 @@
     </div>
 
     <!-- 3. INPUT MEMO: SUBJECT MATTER -->
-    <div id="page-sm" class="page-view hidden space-y-4">
-      <div class="bg-white p-6 rounded-xl border shadow-sm max-w-xl mx-auto space-y-4">
-        <h3 class="font-bold text-orange-600 border-b pb-2">Form Input Subject Matter</h3>
+    <div id="page-sm" class="page-view hidden space-y-5">
+      <div class="bg-white p-7 rounded-2xl border border-slate-100 shadow-sm max-w-xl mx-auto space-y-5">
+        <h3 class="font-bold text-orange-600 border-b border-slate-100 pb-3 mb-1 text-base tracking-tight">Form Input Subject Matter</h3>
         <form id="form-sm" onsubmit="handleSMSubmit(event)" class="space-y-3 text-sm">
-          <div><label class="block font-medium mb-1">No Memo SM</label><input type="text" id="sm-no-memo" readonly class="w-full bg-slate-100 border rounded px-3 py-2 font-mono"></div>
-          <div><label class="block font-medium mb-1">Nama Pembuat</label><select id="sm-pembuat" required class="w-full border rounded px-3 py-2 bg-white"></select></div>
-          <div><label class="block font-medium mb-1">Uraian Kegiatan</label><textarea id="sm-uraian" required placeholder="Rincian kegiatan" class="w-full border rounded px-3 py-2" rows="3"></textarea></div>
-          <div><label class="block font-medium mb-1">Tanggal Penyerahan ke PPK</label><input type="date" id="sm-tgl-penyerahan" required class="w-full border rounded px-3 py-2"></div>
-          <button type="submit" class="bg-orange-600 text-white px-4 py-2 rounded font-bold w-full">Simpan Subject Matter</button>
+          <div><label class="block text-sm font-semibold mb-1.5 text-slate-600">No Memo SM</label><input type="text" id="sm-no-memo" readonly class="w-full bg-slate-100 border rounded px-3 py-2 font-mono"></div>
+          <div><label class="block text-sm font-semibold mb-1.5 text-slate-600">Nama Pembuat</label><select id="sm-pembuat" required class="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm bg-white focus:ring-2 focus:ring-orange-500/30 focus:border-orange-500 outline-none transition"></select></div>
+          <div><label class="block text-sm font-semibold mb-1.5 text-slate-600">Uraian Kegiatan</label><textarea id="sm-uraian" required placeholder="Rincian kegiatan" class="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm bg-slate-50 focus:bg-white focus:ring-2 focus:ring-orange-500/30 focus:border-orange-500 outline-none transition" rows="3"></textarea></div>
+          <div><label class="block text-sm font-semibold mb-1.5 text-slate-600">Tanggal Penyerahan ke PPK</label><input type="date" id="sm-tgl-penyerahan" required class="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm bg-slate-50 focus:bg-white focus:ring-2 focus:ring-orange-500/30 focus:border-orange-500 outline-none transition"></div>
+          <button type="submit" class="bg-orange-600 hover:bg-orange-700 active:bg-orange-800 text-white px-4 py-2.5 rounded-xl font-bold w-full transition shadow-sm shadow-orange-600/20">Simpan Subject Matter</button>
         </form>
       </div>
     </div>
 
     <!-- 4. INPUT MEMO: PPK -->
-    <div id="page-ppk" class="page-view hidden space-y-4">
-      <div class="bg-white p-6 rounded-xl border shadow-sm max-w-xl mx-auto space-y-4">
-        <h3 class="font-bold text-orange-600 border-b pb-2">Form Verifikasi PPK</h3>
+    <div id="page-ppk" class="page-view hidden space-y-5">
+      <div class="bg-white p-7 rounded-2xl border border-slate-100 shadow-sm max-w-xl mx-auto space-y-5">
+        <h3 class="font-bold text-orange-600 border-b border-slate-100 pb-3 mb-1 text-base tracking-tight">Form Verifikasi PPK</h3>
         <form id="form-ppk" onsubmit="handlePPKSubmit(event)" class="space-y-3 text-sm">
-          <div><label class="block font-medium mb-1">Pilih Berkas Masuk</label><select id="ppk-select-berkas" required class="w-full border rounded px-3 py-2 bg-white"></select></div>
-          <div class="grid grid-cols-2 gap-2">
-            <div><label class="block font-medium mb-1">Tgl Terima</label><input type="date" id="ppk-tgl-terima" required class="w-full border rounded px-3 py-2"></div>
-            <div><label class="block font-medium mb-1">Nama Penerima Staf</label><select id="ppk-penerima" required class="w-full border rounded px-3 py-2 bg-white"></select></div>
+          <div><label class="block text-sm font-semibold mb-1.5 text-slate-600">Pilih Berkas Masuk</label><select id="ppk-select-berkas" required class="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm bg-white focus:ring-2 focus:ring-orange-500/30 focus:border-orange-500 outline-none transition"></select></div>
+          <div class="grid grid-cols-2 gap-3">
+            <div><label class="block text-sm font-semibold mb-1.5 text-slate-600">Tgl Terima</label><input type="date" id="ppk-tgl-terima" required class="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm bg-slate-50 focus:bg-white focus:ring-2 focus:ring-orange-500/30 focus:border-orange-500 outline-none transition"></div>
+            <div><label class="block text-sm font-semibold mb-1.5 text-slate-600">Nama Penerima Staf</label><select id="ppk-penerima" required class="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm bg-white focus:ring-2 focus:ring-orange-500/30 focus:border-orange-500 outline-none transition"></select></div>
           </div>
-          <div><label class="block font-medium mb-1">Status Keputusan</label><select id="ppk-status" class="w-full border rounded px-3 py-2 bg-white"><option value="Diteruskan">Diteruskan ke PPSPM</option><option value="Dikembalikan">Dikembalikan</option></select></div>
-          <div><label class="block font-medium mb-1">Catatan PPK</label><textarea id="ppk-catatan" class="w-full border rounded px-3 py-2" rows="2"></textarea></div>
-          <button type="submit" class="bg-orange-600 text-white px-4 py-2 rounded font-bold w-full">Simpan Verifikasi PPK</button>
+          <div><label class="block text-sm font-semibold mb-1.5 text-slate-600">Status Keputusan</label><select id="ppk-status" class="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm bg-white focus:ring-2 focus:ring-orange-500/30 focus:border-orange-500 outline-none transition"><option value="Diteruskan">Diteruskan ke PPSPM</option><option value="Dikembalikan">Dikembalikan</option></select></div>
+          <div><label class="block text-sm font-semibold mb-1.5 text-slate-600">Catatan PPK</label><textarea id="ppk-catatan" class="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm bg-slate-50 focus:bg-white focus:ring-2 focus:ring-orange-500/30 focus:border-orange-500 outline-none transition" rows="2"></textarea></div>
+          <button type="submit" class="bg-orange-600 hover:bg-orange-700 active:bg-orange-800 text-white px-4 py-2.5 rounded-xl font-bold w-full transition shadow-sm shadow-orange-600/20">Simpan Verifikasi PPK</button>
         </form>
       </div>
     </div>
 
     <!-- 5. INPUT MEMO: PPSPM -->
-    <div id="page-ppspm" class="page-view hidden space-y-4">
-      <div class="bg-white p-6 rounded-xl border shadow-sm max-w-xl mx-auto space-y-4">
-        <h3 class="font-bold text-orange-600 border-b pb-2">Form Pengujian PPSPM</h3>
+    <div id="page-ppspm" class="page-view hidden space-y-5">
+      <div class="bg-white p-7 rounded-2xl border border-slate-100 shadow-sm max-w-xl mx-auto space-y-5">
+        <h3 class="font-bold text-orange-600 border-b border-slate-100 pb-3 mb-1 text-base tracking-tight">Form Pengujian PPSPM</h3>
         <form id="form-ppspm" onsubmit="handlePPSPMSubmit(event)" class="space-y-3 text-sm">
-          <div><label class="block font-medium mb-1">Pilih Berkas Masuk</label><select id="ppspm-select-berkas" required class="w-full border rounded px-3 py-2 bg-white"></select></div>
-          <div><label class="block font-medium mb-1">Tgl Terima PPSPM</label><input type="date" id="ppspm-tgl-terima" required class="w-full border rounded px-3 py-2"></div>
-          <div><label class="block font-medium mb-1">Status Keputusan</label><select id="ppspm-status" class="w-full border rounded px-3 py-2 bg-white"><option value="Diteruskan">Diteruskan</option><option value="Dikembalikan">Dikembalikan</option></select></div>
-          <div><label class="block font-medium mb-1">Catatan PPSPM</label><textarea id="ppspm-catatan" class="w-full border rounded px-3 py-2" rows="2"></textarea></div>
-          <button type="submit" class="bg-orange-600 text-white px-4 py-2 rounded font-bold w-full">Simpan Pengujian PPSPM</button>
+          <div><label class="block text-sm font-semibold mb-1.5 text-slate-600">Pilih Berkas Masuk</label><select id="ppspm-select-berkas" required class="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm bg-white focus:ring-2 focus:ring-orange-500/30 focus:border-orange-500 outline-none transition"></select></div>
+          <div><label class="block text-sm font-semibold mb-1.5 text-slate-600">Tgl Terima PPSPM</label><input type="date" id="ppspm-tgl-terima" required class="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm bg-slate-50 focus:bg-white focus:ring-2 focus:ring-orange-500/30 focus:border-orange-500 outline-none transition"></div>
+          <div><label class="block text-sm font-semibold mb-1.5 text-slate-600">Status Keputusan</label><select id="ppspm-status" class="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm bg-white focus:ring-2 focus:ring-orange-500/30 focus:border-orange-500 outline-none transition"><option value="Diteruskan">Diteruskan</option><option value="Dikembalikan">Dikembalikan</option></select></div>
+          <div><label class="block text-sm font-semibold mb-1.5 text-slate-600">Catatan PPSPM</label><textarea id="ppspm-catatan" class="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm bg-slate-50 focus:bg-white focus:ring-2 focus:ring-orange-500/30 focus:border-orange-500 outline-none transition" rows="2"></textarea></div>
+          <button type="submit" class="bg-orange-600 hover:bg-orange-700 active:bg-orange-800 text-white px-4 py-2.5 rounded-xl font-bold w-full transition shadow-sm shadow-orange-600/20">Simpan Pengujian PPSPM</button>
         </form>
       </div>
     </div>
@@ -394,9 +394,9 @@
     <div id="page-operator" class="page-view hidden space-y-6">
 
       <div class="bg-white p-6 rounded-xl border shadow-sm max-w-xl mx-auto text-sm space-y-3">
-        <h3 class="font-bold text-orange-600 border-b pb-2">Modul Operator SAS / SAKTI</h3>
+        <h3 class="font-bold text-orange-600 border-b border-slate-100 pb-3 mb-1 text-base tracking-tight">Modul Operator SAS / SAKTI</h3>
         <p class="text-slate-500">Modul konfirmasi penerbitan SPM oleh Operator Sistem.</p>
-        <button onclick="navigateTo('page-bendahara')" class="bg-orange-600 text-white px-4 py-2 rounded font-bold w-full">Lanjut ke Bendahara</button>
+        <button onclick="navigateTo('page-bendahara')" class="bg-orange-600 hover:bg-orange-700 active:bg-orange-800 text-white px-4 py-2.5 rounded-xl font-bold w-full transition shadow-sm shadow-orange-600/20">Lanjut ke Bendahara</button>
       </div>
 
       <!-- KELOLA AKUN KARYAWAN & ROLE -->
@@ -409,35 +409,35 @@
         <form id="form-akun-karyawan" onsubmit="handleAkunKaryawanSubmit(event)" class="space-y-3 text-sm">
           <input type="hidden" id="akun-edit-uid" value="">
 
-          <div><label class="block font-medium mb-1">Nama Pegawai</label>
-            <select id="akun-nama" required class="w-full border rounded px-3 py-2 bg-white"></select>
+          <div><label class="block text-sm font-semibold mb-1.5 text-slate-600">Nama Pegawai</label>
+            <select id="akun-nama" required class="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm bg-white focus:ring-2 focus:ring-orange-500/30 focus:border-orange-500 outline-none transition"></select>
           </div>
 
-          <div><label class="block font-medium mb-1">Email Login</label>
-            <input type="email" id="akun-email" required placeholder="nama@bps.go.id" class="w-full border rounded px-3 py-2">
+          <div><label class="block text-sm font-semibold mb-1.5 text-slate-600">Email Login</label>
+            <input type="email" id="akun-email" required placeholder="nama@bps.go.id" class="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm bg-slate-50 focus:bg-white focus:ring-2 focus:ring-orange-500/30 focus:border-orange-500 outline-none transition">
           </div>
 
           <div id="akun-password-wrap">
-            <label class="block font-medium mb-1">Password Awal</label>
-            <input type="text" id="akun-password" placeholder="Minimal 6 karakter" class="w-full border rounded px-3 py-2">
+            <label class="block text-sm font-semibold mb-1.5 text-slate-600">Password Awal</label>
+            <input type="text" id="akun-password" placeholder="Minimal 6 karakter" class="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm bg-slate-50 focus:bg-white focus:ring-2 focus:ring-orange-500/30 focus:border-orange-500 outline-none transition">
             <p class="text-[11px] text-slate-400 mt-1">Sampaikan password ini ke pegawai. Bisa diganti sendiri oleh pegawai nanti.</p>
           </div>
 
           <div>
             <label class="block font-medium mb-2">Role / Akses Menu</label>
             <div class="grid grid-cols-2 sm:grid-cols-3 gap-2 text-xs bg-slate-50 border rounded-lg p-3">
-              <label class="flex items-center gap-1.5"><input type="checkbox" name="akun-role" value="Subject Matter" class="rounded text-orange-600"> Subject Matter</label>
-              <label class="flex items-center gap-1.5"><input type="checkbox" name="akun-role" value="PPK" class="rounded text-orange-600"> PPK</label>
-              <label class="flex items-center gap-1.5"><input type="checkbox" name="akun-role" value="PPSPM" class="rounded text-orange-600"> PPSPM</label>
-              <label class="flex items-center gap-1.5"><input type="checkbox" name="akun-role" value="Bendahara" class="rounded text-orange-600"> Bendahara</label>
-              <label class="flex items-center gap-1.5"><input type="checkbox" name="akun-role" value="Operator" class="rounded text-orange-600"> Operator</label>
-              <label class="flex items-center gap-1.5"><input type="checkbox" name="akun-role" value="Super Admin" class="rounded text-orange-600"> Super Admin</label>
+              <label class="flex items-center gap-1.5"><input type="checkbox" name="akun-role" value="Subject Matter" class="rounded text-orange-600 focus:ring-orange-500 w-4 h-4"> Subject Matter</label>
+              <label class="flex items-center gap-1.5"><input type="checkbox" name="akun-role" value="PPK" class="rounded text-orange-600 focus:ring-orange-500 w-4 h-4"> PPK</label>
+              <label class="flex items-center gap-1.5"><input type="checkbox" name="akun-role" value="PPSPM" class="rounded text-orange-600 focus:ring-orange-500 w-4 h-4"> PPSPM</label>
+              <label class="flex items-center gap-1.5"><input type="checkbox" name="akun-role" value="Bendahara" class="rounded text-orange-600 focus:ring-orange-500 w-4 h-4"> Bendahara</label>
+              <label class="flex items-center gap-1.5"><input type="checkbox" name="akun-role" value="Operator" class="rounded text-orange-600 focus:ring-orange-500 w-4 h-4"> Operator</label>
+              <label class="flex items-center gap-1.5"><input type="checkbox" name="akun-role" value="Super Admin" class="rounded text-orange-600 focus:ring-orange-500 w-4 h-4"> Super Admin</label>
             </div>
             <p class="text-[11px] text-slate-400 mt-1.5">Beranda, Lembur, Bukti Belanja &amp; Arsip otomatis bisa diakses semua pegawai yang login. Centang lebih dari satu role kalau pegawai perlu akses gabungan (mis. Subject Matter + PPK).</p>
           </div>
 
           <div class="flex gap-2">
-            <button type="submit" id="btn-submit-akun" class="bg-orange-600 text-white px-4 py-2 rounded font-bold w-full">Buat Akun & Simpan Role</button>
+            <button type="submit" id="btn-submit-akun" class="bg-orange-600 hover:bg-orange-700 active:bg-orange-800 text-white px-4 py-2.5 rounded-xl font-bold w-full transition shadow-sm shadow-orange-600/20">Buat Akun & Simpan Role</button>
             <button type="button" id="btn-batal-edit-akun" onclick="cancelEditAkunKaryawan()" class="hidden bg-slate-100 text-slate-600 px-4 py-2 rounded font-bold">Batal</button>
           </div>
         </form>
@@ -466,102 +466,102 @@
     </div>
 
     <!-- 7. INPUT MEMO: BENDAHARA -->
-    <div id="page-bendahara" class="page-view hidden space-y-4">
-      <div class="bg-white p-6 rounded-xl border shadow-sm max-w-xl mx-auto space-y-4">
-        <h3 class="font-bold text-orange-600 border-b pb-2">Form Pencairan Bendahara</h3>
+    <div id="page-bendahara" class="page-view hidden space-y-5">
+      <div class="bg-white p-7 rounded-2xl border border-slate-100 shadow-sm max-w-xl mx-auto space-y-5">
+        <h3 class="font-bold text-orange-600 border-b border-slate-100 pb-3 mb-1 text-base tracking-tight">Form Pencairan Bendahara</h3>
         <form id="form-bendahara" onsubmit="handleBendaharaSubmit(event)" class="space-y-3 text-sm">
-          <div><label class="block font-medium mb-1">Pilih Berkas Teruji</label><select id="bendahara-select-berkas" required class="w-full border rounded px-3 py-2 bg-white"></select></div>
-          <div><label class="block font-medium mb-1">Nama Bendahara</label><select id="bendahara-pembuat" required class="w-full border rounded px-3 py-2 bg-white"></select></div>
-          <div class="grid grid-cols-2 gap-2">
-            <div><label class="block font-medium mb-1">Tgl SP2D</label><input type="date" id="bendahara-tgl-sp2d" required class="w-full border rounded px-3 py-2"></div>
-            <div><label class="block font-medium mb-1">Tgl Transfer</label><input type="date" id="bendahara-tgl-transfer" required class="w-full border rounded px-3 py-2"></div>
+          <div><label class="block text-sm font-semibold mb-1.5 text-slate-600">Pilih Berkas Teruji</label><select id="bendahara-select-berkas" required class="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm bg-white focus:ring-2 focus:ring-orange-500/30 focus:border-orange-500 outline-none transition"></select></div>
+          <div><label class="block text-sm font-semibold mb-1.5 text-slate-600">Nama Bendahara</label><select id="bendahara-pembuat" required class="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm bg-white focus:ring-2 focus:ring-orange-500/30 focus:border-orange-500 outline-none transition"></select></div>
+          <div class="grid grid-cols-2 gap-3">
+            <div><label class="block text-sm font-semibold mb-1.5 text-slate-600">Tgl SP2D</label><input type="date" id="bendahara-tgl-sp2d" required class="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm bg-slate-50 focus:bg-white focus:ring-2 focus:ring-orange-500/30 focus:border-orange-500 outline-none transition"></div>
+            <div><label class="block text-sm font-semibold mb-1.5 text-slate-600">Tgl Transfer</label><input type="date" id="bendahara-tgl-transfer" required class="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm bg-slate-50 focus:bg-white focus:ring-2 focus:ring-orange-500/30 focus:border-orange-500 outline-none transition"></div>
           </div>
-          <button type="submit" class="bg-orange-600 text-white px-4 py-2 rounded font-bold w-full">Simpan Pencairan Bendahara</button>
+          <button type="submit" class="bg-orange-600 hover:bg-orange-700 active:bg-orange-800 text-white px-4 py-2.5 rounded-xl font-bold w-full transition shadow-sm shadow-orange-600/20">Simpan Pencairan Bendahara</button>
         </form>
       </div>
     </div>
 
     <!-- 8. LEMBUR: PENGAJUAN LEMBUR -->
-    <div id="page-pengajuan-lembur" class="page-view hidden space-y-4">
-      <div class="bg-white p-6 rounded-xl border shadow-sm max-w-xl mx-auto space-y-4">
-        <h3 class="font-bold text-orange-600 border-b pb-2">Form Pengajuan Lembur</h3>
+    <div id="page-pengajuan-lembur" class="page-view hidden space-y-5">
+      <div class="bg-white p-7 rounded-2xl border border-slate-100 shadow-sm max-w-xl mx-auto space-y-5">
+        <h3 class="font-bold text-orange-600 border-b border-slate-100 pb-3 mb-1 text-base tracking-tight">Form Pengajuan Lembur</h3>
         <form id="form-pengajuan-lembur" onsubmit="handlePengajuanLemburSubmit(event)" class="space-y-3 text-sm">
-          <div><label class="block font-medium mb-1">Nama Ketua Tim</label><select id="lembur-ketua" required class="w-full border rounded px-3 py-2 bg-white"></select></div>
-          <div class="grid grid-cols-2 gap-2">
-            <div><label class="block font-medium mb-1">Tgl Pengajuan</label><input type="date" id="lembur-tgl-pengajuan" required class="w-full border rounded px-3 py-2"></div>
-            <div><label class="block font-medium mb-1">Tgl Mulai</label><input type="date" id="lembur-tgl-mulai" required class="w-full border rounded px-3 py-2"></div>
+          <div><label class="block text-sm font-semibold mb-1.5 text-slate-600">Nama Ketua Tim</label><select id="lembur-ketua" required class="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm bg-white focus:ring-2 focus:ring-orange-500/30 focus:border-orange-500 outline-none transition"></select></div>
+          <div class="grid grid-cols-2 gap-3">
+            <div><label class="block text-sm font-semibold mb-1.5 text-slate-600">Tgl Pengajuan</label><input type="date" id="lembur-tgl-pengajuan" required class="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm bg-slate-50 focus:bg-white focus:ring-2 focus:ring-orange-500/30 focus:border-orange-500 outline-none transition"></div>
+            <div><label class="block text-sm font-semibold mb-1.5 text-slate-600">Tgl Mulai</label><input type="date" id="lembur-tgl-mulai" required class="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm bg-slate-50 focus:bg-white focus:ring-2 focus:ring-orange-500/30 focus:border-orange-500 outline-none transition"></div>
           </div>
-          <div><label class="block font-medium mb-1">Durasi (Jam)</label><input type="number" id="lembur-durasi" required class="w-full border rounded px-3 py-2"></div>
+          <div><label class="block text-sm font-semibold mb-1.5 text-slate-600">Durasi (Jam)</label><input type="number" id="lembur-durasi" required class="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm bg-slate-50 focus:bg-white focus:ring-2 focus:ring-orange-500/30 focus:border-orange-500 outline-none transition"></div>
           <div>
-            <label class="block font-medium mb-1">Peserta Lembur (Checklist Multiple)</label>
+            <label class="block text-sm font-semibold mb-1.5 text-slate-600">Peserta Lembur (Checklist Multiple)</label>
             <div id="container-lembur-peserta" class="max-h-48 overflow-y-auto border rounded p-3 bg-slate-50 space-y-1 text-xs">
               <!-- Checkbox nama pegawai dimuat otomatis via JS -->
             </div>
           </div>
-          <button type="submit" class="bg-orange-600 text-white px-4 py-2 rounded font-bold w-full">Simpan Pengajuan Lembur</button>
+          <button type="submit" class="bg-orange-600 hover:bg-orange-700 active:bg-orange-800 text-white px-4 py-2.5 rounded-xl font-bold w-full transition shadow-sm shadow-orange-600/20">Simpan Pengajuan Lembur</button>
         </form>
       </div>
     </div>
 
     <!-- 9. LEMBUR: LAPORAN LEMBUR -->
-    <div id="page-laporan-lembur" class="page-view hidden space-y-4">
-      <div class="bg-white p-6 rounded-xl border shadow-sm max-w-xl mx-auto space-y-4">
-        <h3 class="font-bold text-orange-600 border-b pb-2">Form Laporan Hasil Lembur</h3>
+    <div id="page-laporan-lembur" class="page-view hidden space-y-5">
+      <div class="bg-white p-7 rounded-2xl border border-slate-100 shadow-sm max-w-xl mx-auto space-y-5">
+        <h3 class="font-bold text-orange-600 border-b border-slate-100 pb-3 mb-1 text-base tracking-tight">Form Laporan Hasil Lembur</h3>
         <form id="form-laporan-lembur" onsubmit="handleLaporanLemburFirebase(event)" class="space-y-3 text-sm">
-          <div><label class="block font-medium mb-1">Nama Peserta</label><select id="lap-nama" required class="w-full border rounded px-3 py-2 bg-white"></select></div>
-          <div class="grid grid-cols-2 gap-2">
-            <div><label class="block font-medium mb-1">Tanggal</label><input type="date" id="lap-tgl" required class="w-full border rounded px-3 py-2"></div>
-            <div><label class="block font-medium mb-1">Jam</label><input type="time" id="lap-jam" required class="w-full border rounded px-3 py-2"></div>
+          <div><label class="block text-sm font-semibold mb-1.5 text-slate-600">Nama Peserta</label><select id="lap-nama" required class="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm bg-white focus:ring-2 focus:ring-orange-500/30 focus:border-orange-500 outline-none transition"></select></div>
+          <div class="grid grid-cols-2 gap-3">
+            <div><label class="block text-sm font-semibold mb-1.5 text-slate-600">Tanggal</label><input type="date" id="lap-tgl" required class="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm bg-slate-50 focus:bg-white focus:ring-2 focus:ring-orange-500/30 focus:border-orange-500 outline-none transition"></div>
+            <div><label class="block text-sm font-semibold mb-1.5 text-slate-600">Jam</label><input type="time" id="lap-jam" required class="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm bg-slate-50 focus:bg-white focus:ring-2 focus:ring-orange-500/30 focus:border-orange-500 outline-none transition"></div>
           </div>
-          <div><label class="block font-medium mb-1">Output Pekerjaan</label><textarea id="lap-output" required class="w-full border rounded px-3 py-2" rows="3"></textarea></div>
-          <div><label class="block font-medium mb-1">Upload Foto</label><input type="file" id="lap-foto" accept="image/*" class="w-full border rounded px-3 py-1 text-xs"></div>
-          <button type="submit" id="btn-submit-lembur" class="bg-orange-600 text-white px-4 py-2 rounded font-bold w-full">Simpan Laporan Lembur</button>
+          <div><label class="block text-sm font-semibold mb-1.5 text-slate-600">Output Pekerjaan</label><textarea id="lap-output" required class="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm bg-slate-50 focus:bg-white focus:ring-2 focus:ring-orange-500/30 focus:border-orange-500 outline-none transition" rows="3"></textarea></div>
+          <div><label class="block text-sm font-semibold mb-1.5 text-slate-600">Upload Foto</label><input type="file" id="lap-foto" accept="image/*" class="w-full border border-slate-200 rounded-xl px-3 py-2 text-xs bg-slate-50 focus:bg-white transition"></div>
+          <button type="submit" id="btn-submit-lembur" class="bg-orange-600 hover:bg-orange-700 active:bg-orange-800 text-white px-4 py-2.5 rounded-xl font-bold w-full transition shadow-sm shadow-orange-600/20">Simpan Laporan Lembur</button>
         </form>
       </div>
     </div>
 
     <!-- 10. BELANJA UP: REKAM SPBY -->
-    <div id="page-rekam-spby" class="page-view hidden space-y-4">
+    <div id="page-rekam-spby" class="page-view hidden space-y-5">
       <div class="bg-white p-6 rounded-xl border shadow-sm max-w-xl mx-auto text-sm space-y-3">
-        <h3 class="font-bold text-orange-600 border-b pb-2">Rekam SPBY Bendahara</h3>
+        <h3 class="font-bold text-orange-600 border-b border-slate-100 pb-3 mb-1 text-base tracking-tight">Rekam SPBY Bendahara</h3>
         <p class="text-slate-500">Form Perekaman SPBY sebelum mengunggah bukti belanja.</p>
-        <button onclick="navigateTo('page-up')" class="bg-orange-600 text-white px-4 py-2 rounded font-bold w-full">Lanjut ke Bukti Belanja</button>
+        <button onclick="navigateTo('page-up')" class="bg-orange-600 hover:bg-orange-700 active:bg-orange-800 text-white px-4 py-2.5 rounded-xl font-bold w-full transition shadow-sm shadow-orange-600/20">Lanjut ke Bukti Belanja</button>
       </div>
     </div>
 
     <!-- 11. BELANJA UP: BUKTI BELANJA -->
-    <div id="page-up" class="page-view hidden space-y-4">
-      <div class="bg-white p-6 rounded-xl border shadow-sm max-w-xl mx-auto space-y-4">
-        <h3 class="font-bold text-orange-600 border-b pb-2">Form Bukti Belanja UP</h3>
+    <div id="page-up" class="page-view hidden space-y-5">
+      <div class="bg-white p-7 rounded-2xl border border-slate-100 shadow-sm max-w-xl mx-auto space-y-5">
+        <h3 class="font-bold text-orange-600 border-b border-slate-100 pb-3 mb-1 text-base tracking-tight">Form Bukti Belanja UP</h3>
         <form id="form-up" onsubmit="handleUPFirebase(event)" class="space-y-3 text-sm">
-          <div><label class="block font-medium mb-1">Tanggal Belanja</label><input type="date" id="up-tgl" required class="w-full border rounded px-3 py-2"></div>
-          <div><label class="block font-medium mb-1">Jenis Belanja</label><select id="up-jenis" class="w-full border rounded px-3 py-2 bg-white"><option value="ATK">ATK</option><option value="ARK">ARK</option><option value="Keperluan Kantor">Keperluan Kantor</option></select></div>
-          <div><label class="block font-medium mb-1">Nama Toko</label><input type="text" id="up-toko" required class="w-full border rounded px-3 py-2"></div>
-          <div><label class="block font-medium mb-1">Nominal (Rp)</label><input type="number" id="up-nominal" required class="w-full border rounded px-3 py-2"></div>
-          <div><label class="block font-medium mb-1">Upload Nota</label><input type="file" id="up-bukti" accept="image/*" class="w-full border rounded px-3 py-1 text-xs"></div>
-          <button type="submit" id="btn-submit-up" class="bg-orange-600 text-white px-4 py-2 rounded font-bold w-full">Simpan Belanja UP</button>
+          <div><label class="block text-sm font-semibold mb-1.5 text-slate-600">Tanggal Belanja</label><input type="date" id="up-tgl" required class="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm bg-slate-50 focus:bg-white focus:ring-2 focus:ring-orange-500/30 focus:border-orange-500 outline-none transition"></div>
+          <div><label class="block text-sm font-semibold mb-1.5 text-slate-600">Jenis Belanja</label><select id="up-jenis" class="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm bg-white focus:ring-2 focus:ring-orange-500/30 focus:border-orange-500 outline-none transition"><option value="ATK">ATK</option><option value="ARK">ARK</option><option value="Keperluan Kantor">Keperluan Kantor</option></select></div>
+          <div><label class="block text-sm font-semibold mb-1.5 text-slate-600">Nama Toko</label><input type="text" id="up-toko" required class="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm bg-slate-50 focus:bg-white focus:ring-2 focus:ring-orange-500/30 focus:border-orange-500 outline-none transition"></div>
+          <div><label class="block text-sm font-semibold mb-1.5 text-slate-600">Nominal (Rp)</label><input type="number" id="up-nominal" required class="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm bg-slate-50 focus:bg-white focus:ring-2 focus:ring-orange-500/30 focus:border-orange-500 outline-none transition"></div>
+          <div><label class="block text-sm font-semibold mb-1.5 text-slate-600">Upload Nota</label><input type="file" id="up-bukti" accept="image/*" class="w-full border border-slate-200 rounded-xl px-3 py-2 text-xs bg-slate-50 focus:bg-white transition"></div>
+          <button type="submit" id="btn-submit-up" class="bg-orange-600 hover:bg-orange-700 active:bg-orange-800 text-white px-4 py-2.5 rounded-xl font-bold w-full transition shadow-sm shadow-orange-600/20">Simpan Belanja UP</button>
         </form>
       </div>
     </div>
 
     <!-- 12. ARSIP: SK, KAK, SPM -->
-    <div id="page-arsip-sk" class="page-view hidden space-y-4">
-      <div class="bg-white p-6 rounded-xl border shadow-sm max-w-xl mx-auto">
-        <h3 class="font-bold text-orange-600 border-b pb-2">Arsip SK</h3>
+    <div id="page-arsip-sk" class="page-view hidden space-y-5">
+      <div class="bg-white p-7 rounded-2xl border border-slate-100 shadow-sm max-w-xl mx-auto">
+        <h3 class="font-bold text-orange-600 border-b border-slate-100 pb-3 mb-1 text-base tracking-tight">Arsip SK</h3>
         <p class="text-xs text-slate-500 mt-2">Daftar arsip Surat Keputusan pelaksanaan operasional.</p>
       </div>
     </div>
 
-    <div id="page-arsip-kak" class="page-view hidden space-y-4">
-      <div class="bg-white p-6 rounded-xl border shadow-sm max-w-xl mx-auto">
-        <h3 class="font-bold text-orange-600 border-b pb-2">Arsip KAK</h3>
+    <div id="page-arsip-kak" class="page-view hidden space-y-5">
+      <div class="bg-white p-7 rounded-2xl border border-slate-100 shadow-sm max-w-xl mx-auto">
+        <h3 class="font-bold text-orange-600 border-b border-slate-100 pb-3 mb-1 text-base tracking-tight">Arsip KAK</h3>
         <p class="text-xs text-slate-500 mt-2">Daftar arsip Kerangka Acuan Kerja pendukung anggaran.</p>
       </div>
     </div>
 
-    <div id="page-arsip-spm" class="page-view hidden space-y-4">
-      <div class="bg-white p-6 rounded-xl border shadow-sm max-w-xl mx-auto">
-        <h3 class="font-bold text-orange-600 border-b pb-2">Arsip SPM</h3>
+    <div id="page-arsip-spm" class="page-view hidden space-y-5">
+      <div class="bg-white p-7 rounded-2xl border border-slate-100 shadow-sm max-w-xl mx-auto">
+        <h3 class="font-bold text-orange-600 border-b border-slate-100 pb-3 mb-1 text-base tracking-tight">Arsip SPM</h3>
         <p class="text-xs text-slate-500 mt-2">Daftar arsip Surat Perintah Membayar yang telah dicairkan.</p>
       </div>
     </div>
