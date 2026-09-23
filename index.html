@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Login - MONEV BPS Kota Kotamobagu</title>
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <!-- FIREBASE SDK (Compat Version) -->
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+
+  <link rel="stylesheet" href="login.css">
+</head>
+<body class="bg-slate-900 text-slate-800 flex items-center justify-center min-h-screen p-4 font-sans">
+
+  <!-- CARD CONTAINER LOGIN -->
+  <div class="bg-white rounded-2xl shadow-2xl border border-slate-100 max-w-md w-full p-8 space-y-6 relative overflow-hidden">
+    
+    <!-- ACCENT BAR UPPER -->
+    <div class="absolute top-0 left-0 right-0 h-2 bg-gradient-to-r from-orange-500 to-amber-500"></div>
+
+    <!-- LOGO & HEADER -->
+    <div class="text-center space-y-3 pt-2">
+      <div class="inline-flex items-center justify-center bg-orange-50 p-3 rounded-2xl text-orange-600 mb-1 border border-orange-100">
+        <img src="https://upload.wikimedia.org/wikipedia/commons/2/28/Lambang_Badan_Pusat_Statistik_%28BPS%29_Indonesia.svg" alt="Logo BPS" class="w-10 h-10">
+      </div>
+      <div>
+        <h1 class="text-2xl font-bold text-slate-800">Sistem MONEV BPS</h1>
+        <p class="text-xs text-orange-600 font-semibold tracking-wide mt-0.5">KOTA KOTAMOBAGU</p>
+      </div>
+      <p class="text-xs text-slate-400">Silakan masuk menggunakan akun BPS Anda</p>
+    </div>
+
+    <!-- FORM LOGIN -->
+    <form id="form-login" onsubmit="handleLoginSubmit(event)" class="space-y-4 text-xs">
+      
+      <!-- INPUT EMAIL -->
+      <div>
+        <label for="login-email" class="block font-semibold mb-1 text-slate-700">Email Pegawai BPS</label>
+        <div class="relative">
+          <i data-lucide="mail" class="w-4 h-4 absolute left-3.5 top-3 text-slate-400"></i>
+          <input 
+            type="email" 
+            id="login-email" 
+            placeholder="nama@bps.go.id" 
+            required 
+            class="w-full border border-slate-200 rounded-xl pl-10 pr-3 py-2.5 text-xs text-slate-800 bg-slate-50 focus:bg-white focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none transition"
+          >
+        </div>
+      </div>
+
+      <!-- INPUT PASSWORD -->
+      <div>
+        <label for="login-password" class="block font-semibold mb-1 text-slate-700">Kata Sandi (Password)</label>
+        <div class="relative">
+          <i data-lucide="lock" class="w-4 h-4 absolute left-3.5 top-3 text-slate-400"></i>
+          <input 
+            type="password" 
+            id="login-password" 
+            placeholder="••••••••" 
+            required 
+            class="w-full border border-slate-200 rounded-xl pl-10 pr-3 py-2.5 text-xs text-slate-800 bg-slate-50 focus:bg-white focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none transition"
+          >
+        </div>
+      </div>
+
+      <!-- ERROR MESSAGE CONTAINER -->
+      <div id="login-error-msg" class="hidden p-3 bg-red-50 text-red-600 rounded-xl text-[11px] font-medium border border-red-200 flex items-center gap-2">
+        <i data-lucide="alert-circle" class="w-4 h-4 shrink-0 text-red-500"></i>
+        <span id="login-error-text">Email atau Kata Sandi salah!</span>
+      </div>
+
+      <!-- SUBMIT BUTTON -->
+      <button 
+        type="submit" 
+        id="btn-login-submit" 
+        class="w-full bg-orange-600 hover:bg-orange-700 active:bg-orange-800 text-white py-3 rounded-xl font-bold shadow-lg shadow-orange-600/20 transition flex items-center justify-center gap-2 text-xs"
+      >
+        <span>Masuk ke Sistem</span>
+        <i data-lucide="arrow-right" class="w-4 h-4"></i>
+      </button>
+
+    </form>
+
+    <!-- FOOTER INFO -->
+    <div class="border-t border-slate-100 pt-4 text-center">
+      <p class="text-[10px] text-slate-400 leading-relaxed">
+        Belum memiliki akun atau lupa password? <br>
+        Hubungi <span class="font-semibold text-slate-600">Operator SAS / Admin MONEV BPS Kota Kotamobagu</span>.
+      </p>
+    </div>
+
+  </div>
+
+  <script src="login.js"></script>
+</body>
+</html>
