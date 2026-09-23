@@ -62,14 +62,15 @@ body {
    ========================================== */
 
 body.login-page {
-  background-color: var(--bps-blue-900);
+  background-color: var(--bps-slate-50);
   background-image:
-    radial-gradient(at 0% 0%, rgba(249, 115, 22, 0.14) 0px, transparent 55%),
-    radial-gradient(at 100% 100%, rgba(245, 158, 11, 0.09) 0px, transparent 55%);
+    radial-gradient(at 8% 8%, rgba(249, 115, 22, 0.12) 0px, transparent 45%),
+    radial-gradient(at 92% 15%, rgba(30, 58, 95, 0.10) 0px, transparent 45%),
+    radial-gradient(at 50% 100%, rgba(245, 158, 11, 0.08) 0px, transparent 50%);
 }
 
 #login-card {
-  box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.35);
+  box-shadow: 0 20px 45px -18px rgba(15, 23, 42, 0.18);
 }
 
 #modal-login {

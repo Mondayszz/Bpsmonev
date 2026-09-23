@@ -48,11 +48,12 @@ window.addEventListener('DOMContentLoaded', () => {
   populatePegawaiDropdowns();
   initCharts();
   subscribeRealtimeData();
+  subscribeUsersRealtime();
 });
 
 // POPULATE DROPDOWNS & CHECKLIST PEGAWAI
 function populatePegawaiDropdowns() {
-  const singleSelectIds = ['sm-pembuat', 'ppk-penerima', 'bendahara-pembuat', 'lembur-ketua', 'lap-nama'];
+  const singleSelectIds = ['sm-pembuat', 'ppk-penerima', 'bendahara-pembuat', 'lembur-ketua', 'lap-nama', 'akun-nama'];
   
   singleSelectIds.forEach(id => {
     const el = document.getElementById(id);
@@ -185,8 +186,17 @@ firebase.auth().onAuthStateChanged(async (user) => {
         currentUserData = {
           nama: user.email.split('@')[0],
           email: user.email,
-          role: ["Subject Matter", "Lembur", "Belanja UP"]
+          role: ["Pegawai"],
+          status: "aktif"
         };
+      }
+
+      // AKUN DINONAKTIFKAN OLEH ADMIN -> PAKSA LOGOUT
+      if (currentUserData.status === "nonaktif") {
+        alert("Akun Anda telah dinonaktifkan oleh Admin. Hubungi Operator MONEV.");
+        await firebase.auth().signOut();
+        window.location.href = "index.html";
+        return;
       }
 
       if (userProfileSec) userProfileSec.classList.remove('hidden');
@@ -257,12 +267,204 @@ async function handleLogout() {
   }
 }
 
-// RESTRIKSI MENU NAVIGASI DARI ROLE
+// ==========================================================================
+// SISTEM ROLE & AKSES MENU
+// null artinya semua pegawai yang login boleh akses (Beranda, Lembur,
+// Bukti Belanja, Arsip). Role lain wajib punya salah satu tag berikut,
+// kecuali role "Operator" / "Super Admin" yang selalu full akses.
+// ==========================================================================
+const PAGE_ROLES = {
+  'page-beranda': null,
+  'page-dashboard-all': ['Operator', 'Super Admin'],
+  'page-sm': ['Subject Matter', 'Operator', 'Super Admin'],
+  'page-ppk': ['PPK', 'Operator', 'Super Admin'],
+  'page-ppspm': ['PPSPM', 'Operator', 'Super Admin'],
+  'page-operator': ['Operator', 'Super Admin'],
+  'page-bendahara': ['Bendahara', 'Operator', 'Super Admin'],
+  'page-pengajuan-lembur': null,
+  'page-laporan-lembur': null,
+  'page-rekam-spby': ['Bendahara', 'Operator', 'Super Admin'],
+  'page-up': null,
+  'page-arsip-sk': null,
+  'page-arsip-kak': null,
+  'page-arsip-spm': null,
+};
+
 function applyRolePermissions(roles) {
-  const isSuperAdmin = roles.includes("Operator") || roles.includes("Super Admin");
-  const btnNavUsers = document.getElementById('btn-nav-users');
-  if (btnNavUsers) {
-    if (isSuperAdmin) btnNavUsers.classList.remove('hidden');
-    else btnNavUsers.classList.add('hidden');
+  const isFullAccess = roles.includes('Operator') || roles.includes('Super Admin');
+
+  document.querySelectorAll('[data-page]').forEach(btn => {
+    const pageId = btn.getAttribute('data-page');
+    const required = PAGE_ROLES[pageId];
+    const allowed = isFullAccess || !required || required.some(r => roles.includes(r));
+    btn.classList.toggle('hidden', !allowed);
+  });
+
+  // Sembunyikan grup submenu (Input Memo, dst) kalau semua child-nya tersembunyi
+  document.querySelectorAll('[data-group]').forEach(group => {
+    const buttons = group.querySelectorAll('[data-page]');
+    const anyVisible = Array.from(buttons).some(b => !b.classList.contains('hidden'));
+    group.classList.toggle('hidden', !anyVisible);
+  });
+
+  // Kalau halaman yang sedang aktif ternyata tidak boleh diakses role ini, kembali ke Beranda
+  const activePage = document.querySelector('.page-view:not(.hidden)');
+  if (activePage) {
+    const btnForActive = document.querySelector(`[data-page="${activePage.id}"]`);
+    if (btnForActive && btnForActive.classList.contains('hidden')) {
+      navigateTo('page-beranda');
+    }
   }
+}
+
+// ==========================================================================
+// KELOLA AKUN KARYAWAN (dibuat oleh role Operator / Super Admin)
+// Menggunakan Firebase App kedua supaya sesi admin yang sedang login
+// tidak ikut ter-logout saat membuat akun baru.
+// ==========================================================================
+function getSecondaryAuth() {
+  let secApp = firebase.apps.find(a => a.name === 'Secondary');
+  if (!secApp) secApp = firebase.initializeApp(firebaseConfig, 'Secondary');
+  return secApp.auth();
+}
+
+function getCheckedRoles() {
+  return Array.from(document.querySelectorAll('input[name="akun-role"]:checked')).map(el => el.value);
+}
+
+function setCheckedRoles(roles) {
+  document.querySelectorAll('input[name="akun-role"]').forEach(el => {
+    el.checked = roles.includes(el.value);
+  });
+}
+
+async function handleAkunKaryawanSubmit(e) {
+  e.preventDefault();
+
+  const editUid = document.getElementById('akun-edit-uid').value;
+  const nama = document.getElementById('akun-nama').value;
+  const email = document.getElementById('akun-email').value.trim();
+  const pass = document.getElementById('akun-password').value;
+  const roles = getCheckedRoles();
+  const btn = document.getElementById('btn-submit-akun');
+
+  if (!nama) { alert('Pilih nama pegawai terlebih dahulu.'); return; }
+  if (roles.length === 0 && !confirm('Belum ada role dicentang, pegawai ini hanya bisa akses menu umum (Beranda/Lembur/Belanja UP/Arsip). Lanjutkan?')) {
+    return;
+  }
+
+  btn.disabled = true;
+  btn.innerText = editUid ? 'Menyimpan...' : 'Membuat Akun...';
+
+  try {
+    if (editUid) {
+      // MODE EDIT: hanya update data role/nama di Firestore
+      await db.collection('users').doc(editUid).set({
+        nama, email, role: roles
+      }, { merge: true });
+      alert('Role/data pegawai berhasil diperbarui.');
+    } else {
+      // MODE BUAT BARU: perlu password, dibuat lewat secondary auth
+      if (!pass || pass.length < 6) {
+        alert('Password minimal 6 karakter.');
+        btn.disabled = false;
+        btn.innerText = 'Buat Akun & Simpan Role';
+        return;
+      }
+      const secondaryAuth = getSecondaryAuth();
+      const cred = await secondaryAuth.createUserWithEmailAndPassword(email, pass);
+      const uid = cred.user.uid;
+
+      await db.collection('users').doc(uid).set({
+        nama, email, role: roles, status: 'aktif',
+        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+      });
+
+      await secondaryAuth.signOut();
+      alert('Akun berhasil dibuat. Sampaikan email & password awal ke pegawai bersangkutan.');
+    }
+
+    cancelEditAkunKaryawan();
+  } catch (err) {
+    console.error(err);
+    let msg = 'Gagal menyimpan akun.';
+    if (err.code === 'auth/email-already-in-use') msg = 'Email tersebut sudah terdaftar.';
+    if (err.code === 'auth/invalid-email') msg = 'Format email tidak valid.';
+    if (err.code === 'auth/weak-password') msg = 'Password terlalu lemah (minimal 6 karakter).';
+    alert(msg);
+  } finally {
+    btn.disabled = false;
+    btn.innerText = editUid ? 'Simpan Perubahan' : 'Buat Akun & Simpan Role';
+  }
+}
+
+function startEditAkunKaryawan(uid, nama, email, roles) {
+  document.getElementById('akun-edit-uid').value = uid;
+  document.getElementById('akun-nama').value = nama;
+  document.getElementById('akun-email').value = email;
+  document.getElementById('akun-email').disabled = true;
+  document.getElementById('akun-password-wrap').classList.add('hidden');
+  setCheckedRoles(roles || []);
+  document.getElementById('btn-submit-akun').innerText = 'Simpan Perubahan';
+  document.getElementById('btn-batal-edit-akun').classList.remove('hidden');
+  document.getElementById('form-akun-karyawan').scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+
+function cancelEditAkunKaryawan() {
+  document.getElementById('form-akun-karyawan').reset();
+  document.getElementById('akun-edit-uid').value = '';
+  document.getElementById('akun-email').disabled = false;
+  document.getElementById('akun-password-wrap').classList.remove('hidden');
+  document.getElementById('btn-submit-akun').innerText = 'Buat Akun & Simpan Role';
+  document.getElementById('btn-batal-edit-akun').classList.add('hidden');
+}
+
+async function toggleUserStatus(uid, currentStatus) {
+  const next = currentStatus === 'aktif' ? 'nonaktif' : 'aktif';
+  const label = next === 'nonaktif' ? 'menonaktifkan' : 'mengaktifkan kembali';
+  if (!confirm(`Yakin ingin ${label} akun ini?`)) return;
+  try {
+    await db.collection('users').doc(uid).set({ status: next }, { merge: true });
+  } catch (err) {
+    console.error(err);
+    alert('Gagal mengubah status akun.');
+  }
+}
+
+function subscribeUsersRealtime() {
+  const tbody = document.getElementById('tbody-akun-karyawan');
+  if (!tbody) return;
+
+  db.collection('users').onSnapshot(snapshot => {
+    if (snapshot.empty) {
+      tbody.innerHTML = `<tr><td colspan="5" class="text-center py-4 text-slate-400">Belum ada akun pegawai.</td></tr>`;
+      return;
+    }
+
+    tbody.innerHTML = '';
+    snapshot.forEach(doc => {
+      const u = doc.data();
+      const roles = u.role || [];
+      const status = u.status || 'aktif';
+      const rolesJson = JSON.stringify(roles).replace(/"/g, '&quot;');
+
+      tbody.innerHTML += `
+        <tr class="hover:bg-slate-50">
+          <td class="px-3 py-2 font-semibold text-slate-800">${u.nama || '-'}</td>
+          <td class="px-3 py-2 font-mono">${u.email || '-'}</td>
+          <td class="px-3 py-2">${roles.length ? roles.map(r => `<span class="inline-block bg-orange-100 text-orange-700 px-1.5 py-0.5 rounded text-[10px] font-medium mr-1 mb-1">${r}</span>`).join('') : '<span class="text-slate-400">Umum</span>'}</td>
+          <td class="px-3 py-2">
+            <span class="px-2 py-0.5 rounded text-[10px] font-bold ${status === 'aktif' ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-600'}">${status === 'aktif' ? 'Aktif' : 'Nonaktif'}</span>
+          </td>
+          <td class="px-3 py-2 whitespace-nowrap">
+            <button onclick='startEditAkunKaryawan("${doc.id}", ${JSON.stringify(u.nama || '')}, ${JSON.stringify(u.email || '')}, ${rolesJson})' class="text-blue-600 hover:underline font-medium mr-2">Edit Role</button>
+            <button onclick="toggleUserStatus('${doc.id}', '${status}')" class="text-red-600 hover:underline font-medium">${status === 'aktif' ? 'Nonaktifkan' : 'Aktifkan'}</button>
+          </td>
+        </tr>
+      `;
+    });
+  }, err => {
+    console.error('Gagal memuat daftar akun:', err);
+    tbody.innerHTML = `<tr><td colspan="5" class="text-center py-4 text-red-400">Gagal memuat data (cek Firestore rules).</td></tr>`;
+  });
 }

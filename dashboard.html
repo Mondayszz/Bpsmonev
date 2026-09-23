@@ -38,72 +38,66 @@
 
       <nav class="p-3 space-y-1 text-xs font-medium">
         <!-- BERANDA -->
-        <button onclick="navigateTo('page-beranda')" class="w-full flex items-center gap-2.5 px-3 py-2 text-slate-700 hover:bg-orange-50 hover:text-orange-600 rounded-lg transition font-bold">
+        <button data-page="page-beranda" onclick="navigateTo('page-beranda')" class="w-full flex items-center gap-2.5 px-3 py-2 text-slate-700 hover:bg-orange-50 hover:text-orange-600 rounded-lg transition font-bold">
           <i data-lucide="home" class="w-4 h-4 text-orange-600"></i>
           <span>Beranda</span>
         </button>
 
         <!-- DASHBOARD INPUT -->
-        <button onclick="navigateTo('page-dashboard-all')" class="w-full flex items-center gap-2.5 px-3 py-2 text-slate-700 hover:bg-orange-50 hover:text-orange-600 rounded-lg transition">
+        <button data-page="page-dashboard-all" onclick="navigateTo('page-dashboard-all')" class="w-full flex items-center gap-2.5 px-3 py-2 text-slate-700 hover:bg-orange-50 hover:text-orange-600 rounded-lg transition">
           <i data-lucide="layout-dashboard" class="w-4 h-4 text-orange-600"></i>
           <span>Dashboard Input</span>
         </button>
 
         <!-- INPUT MEMO SUBMENU -->
-        <div>
+        <div data-group="group-input-memo">
           <button onclick="toggleSubmenu('sub-input-memo')" class="w-full flex items-center justify-between px-3 py-2 text-slate-700 hover:bg-orange-50 hover:text-orange-600 rounded-lg transition">
             <span class="flex items-center gap-2.5"><i data-lucide="file-plus" class="w-4 h-4 text-orange-600"></i> Input Memo</span>
             <i data-lucide="chevron-down" class="w-3.5 h-3.5"></i>
           </button>
           <div id="sub-input-memo" class="hidden pl-8 space-y-1 py-1 text-[11px] text-slate-600">
-            <button onclick="navigateTo('page-sm')" class="w-full text-left py-1 hover:text-orange-600">• Subject Matter</button>
-            <button onclick="navigateTo('page-ppk')" class="w-full text-left py-1 hover:text-orange-600">• PPK</button>
-            <button onclick="navigateTo('page-ppspm')" class="w-full text-left py-1 hover:text-orange-600">• PPSPM</button>
-            <button onclick="navigateTo('page-operator')" class="w-full text-left py-1 hover:text-orange-600">• Operator</button>
-            <button onclick="navigateTo('page-bendahara')" class="w-full text-left py-1 hover:text-orange-600">• Bendahara</button>
+            <button data-page="page-sm" onclick="navigateTo('page-sm')" class="w-full text-left py-1 hover:text-orange-600">• Subject Matter</button>
+            <button data-page="page-ppk" onclick="navigateTo('page-ppk')" class="w-full text-left py-1 hover:text-orange-600">• PPK</button>
+            <button data-page="page-ppspm" onclick="navigateTo('page-ppspm')" class="w-full text-left py-1 hover:text-orange-600">• PPSPM</button>
+            <button data-page="page-operator" onclick="navigateTo('page-operator')" class="w-full text-left py-1 hover:text-orange-600">• Operator</button>
+            <button data-page="page-bendahara" onclick="navigateTo('page-bendahara')" class="w-full text-left py-1 hover:text-orange-600">• Bendahara</button>
           </div>
         </div>
 
         <!-- LEMBUR SUBMENU -->
-        <div>
+        <div data-group="group-lembur">
           <button onclick="toggleSubmenu('sub-lembur')" class="w-full flex items-center justify-between px-3 py-2 text-slate-700 hover:bg-orange-50 hover:text-orange-600 rounded-lg transition">
             <span class="flex items-center gap-2.5"><i data-lucide="clock" class="w-4 h-4 text-orange-600"></i> Lembur</span>
             <i data-lucide="chevron-down" class="w-3.5 h-3.5"></i>
           </button>
           <div id="sub-lembur" class="hidden pl-8 space-y-1 py-1 text-[11px] text-slate-600">
-            <button onclick="navigateTo('page-pengajuan-lembur')" class="w-full text-left py-1 hover:text-orange-600">• Pengajuan Lembur</button>
-            <button onclick="navigateTo('page-laporan-lembur')" class="w-full text-left py-1 hover:text-orange-600">• Laporan Lembur</button>
+            <button data-page="page-pengajuan-lembur" onclick="navigateTo('page-pengajuan-lembur')" class="w-full text-left py-1 hover:text-orange-600">• Pengajuan Lembur</button>
+            <button data-page="page-laporan-lembur" onclick="navigateTo('page-laporan-lembur')" class="w-full text-left py-1 hover:text-orange-600">• Laporan Lembur</button>
           </div>
         </div>
 
         <!-- BELANJA UP SUBMENU -->
-        <div>
+        <div data-group="group-up">
           <button onclick="toggleSubmenu('sub-up')" class="w-full flex items-center justify-between px-3 py-2 text-slate-700 hover:bg-orange-50 hover:text-orange-600 rounded-lg transition">
             <span class="flex items-center gap-2.5"><i data-lucide="shopping-cart" class="w-4 h-4 text-orange-600"></i> Belanja UP</span>
             <i data-lucide="chevron-down" class="w-3.5 h-3.5"></i>
           </button>
           <div id="sub-up" class="hidden pl-8 space-y-1 py-1 text-[11px] text-slate-600">
-            <button onclick="navigateTo('page-rekam-spby')" class="w-full text-left py-1 hover:text-orange-600">• Rekam SPBY Bendahara</button>
-            <button onclick="navigateTo('page-up')" class="w-full text-left py-1 hover:text-orange-600">• Bukti Belanja</button>
+            <button data-page="page-rekam-spby" onclick="navigateTo('page-rekam-spby')" class="w-full text-left py-1 hover:text-orange-600">• Rekam SPBY Bendahara</button>
+            <button data-page="page-up" onclick="navigateTo('page-up')" class="w-full text-left py-1 hover:text-orange-600">• Bukti Belanja</button>
           </div>
         </div>
 
-        <!-- MANAJEMEN USER (Super Admin / Operator saja) -->
-        <button id="btn-nav-users" onclick="navigateTo('page-users')" class="hidden w-full flex items-center gap-2.5 px-3 py-2 text-slate-700 hover:bg-orange-50 hover:text-orange-600 rounded-lg transition">
-          <i data-lucide="users" class="w-4 h-4 text-orange-600"></i>
-          <span>Manajemen User</span>
-        </button>
-
         <!-- ARSIP SUBMENU -->
-        <div>
+        <div data-group="group-arsip">
           <button onclick="toggleSubmenu('sub-arsip')" class="w-full flex items-center justify-between px-3 py-2 text-slate-700 hover:bg-orange-50 hover:text-orange-600 rounded-lg transition">
             <span class="flex items-center gap-2.5"><i data-lucide="archive" class="w-4 h-4 text-orange-600"></i> Arsip</span>
             <i data-lucide="chevron-down" class="w-3.5 h-3.5"></i>
           </button>
           <div id="sub-arsip" class="hidden pl-8 space-y-1 py-1 text-[11px] text-slate-600">
-            <button onclick="navigateTo('page-arsip-sk')" class="w-full text-left py-1 hover:text-orange-600">• SK</button>
-            <button onclick="navigateTo('page-arsip-kak')" class="w-full text-left py-1 hover:text-orange-600">• KAK</button>
-            <button onclick="navigateTo('page-arsip-spm')" class="w-full text-left py-1 hover:text-orange-600">• SPM</button>
+            <button data-page="page-arsip-sk" onclick="navigateTo('page-arsip-sk')" class="w-full text-left py-1 hover:text-orange-600">• SK</button>
+            <button data-page="page-arsip-kak" onclick="navigateTo('page-arsip-kak')" class="w-full text-left py-1 hover:text-orange-600">• KAK</button>
+            <button data-page="page-arsip-spm" onclick="navigateTo('page-arsip-spm')" class="w-full text-left py-1 hover:text-orange-600">• SPM</button>
           </div>
         </div>
 
@@ -397,12 +391,78 @@
     </div>
 
     <!-- 6. INPUT MEMO: OPERATOR -->
-    <div id="page-operator" class="page-view hidden space-y-4">
+    <div id="page-operator" class="page-view hidden space-y-6">
+
       <div class="bg-white p-6 rounded-xl border shadow-sm max-w-xl mx-auto text-sm space-y-3">
         <h3 class="font-bold text-orange-600 border-b pb-2">Modul Operator SAS / SAKTI</h3>
         <p class="text-slate-500">Modul konfirmasi penerbitan SPM oleh Operator Sistem.</p>
         <button onclick="navigateTo('page-bendahara')" class="bg-orange-600 text-white px-4 py-2 rounded font-bold w-full">Lanjut ke Bendahara</button>
       </div>
+
+      <!-- KELOLA AKUN KARYAWAN & ROLE -->
+      <div class="bg-white p-6 rounded-xl border shadow-sm max-w-2xl mx-auto space-y-5">
+        <div class="border-b pb-2">
+          <h3 class="font-bold text-orange-600">Kelola Akun Karyawan</h3>
+          <p class="text-xs text-slate-400 mt-1">Buat akun login untuk pegawai dan tentukan role/akses menunya.</p>
+        </div>
+
+        <form id="form-akun-karyawan" onsubmit="handleAkunKaryawanSubmit(event)" class="space-y-3 text-sm">
+          <input type="hidden" id="akun-edit-uid" value="">
+
+          <div><label class="block font-medium mb-1">Nama Pegawai</label>
+            <select id="akun-nama" required class="w-full border rounded px-3 py-2 bg-white"></select>
+          </div>
+
+          <div><label class="block font-medium mb-1">Email Login</label>
+            <input type="email" id="akun-email" required placeholder="nama@bps.go.id" class="w-full border rounded px-3 py-2">
+          </div>
+
+          <div id="akun-password-wrap">
+            <label class="block font-medium mb-1">Password Awal</label>
+            <input type="text" id="akun-password" placeholder="Minimal 6 karakter" class="w-full border rounded px-3 py-2">
+            <p class="text-[11px] text-slate-400 mt-1">Sampaikan password ini ke pegawai. Bisa diganti sendiri oleh pegawai nanti.</p>
+          </div>
+
+          <div>
+            <label class="block font-medium mb-2">Role / Akses Menu</label>
+            <div class="grid grid-cols-2 sm:grid-cols-3 gap-2 text-xs bg-slate-50 border rounded-lg p-3">
+              <label class="flex items-center gap-1.5"><input type="checkbox" name="akun-role" value="Subject Matter" class="rounded text-orange-600"> Subject Matter</label>
+              <label class="flex items-center gap-1.5"><input type="checkbox" name="akun-role" value="PPK" class="rounded text-orange-600"> PPK</label>
+              <label class="flex items-center gap-1.5"><input type="checkbox" name="akun-role" value="PPSPM" class="rounded text-orange-600"> PPSPM</label>
+              <label class="flex items-center gap-1.5"><input type="checkbox" name="akun-role" value="Bendahara" class="rounded text-orange-600"> Bendahara</label>
+              <label class="flex items-center gap-1.5"><input type="checkbox" name="akun-role" value="Operator" class="rounded text-orange-600"> Operator</label>
+              <label class="flex items-center gap-1.5"><input type="checkbox" name="akun-role" value="Super Admin" class="rounded text-orange-600"> Super Admin</label>
+            </div>
+            <p class="text-[11px] text-slate-400 mt-1.5">Beranda, Lembur, Bukti Belanja &amp; Arsip otomatis bisa diakses semua pegawai yang login. Centang lebih dari satu role kalau pegawai perlu akses gabungan (mis. Subject Matter + PPK).</p>
+          </div>
+
+          <div class="flex gap-2">
+            <button type="submit" id="btn-submit-akun" class="bg-orange-600 text-white px-4 py-2 rounded font-bold w-full">Buat Akun & Simpan Role</button>
+            <button type="button" id="btn-batal-edit-akun" onclick="cancelEditAkunKaryawan()" class="hidden bg-slate-100 text-slate-600 px-4 py-2 rounded font-bold">Batal</button>
+          </div>
+        </form>
+
+        <div class="border-t pt-4">
+          <h4 class="font-bold text-slate-700 text-xs uppercase tracking-wide mb-2">Daftar Akun Pegawai</h4>
+          <div class="overflow-x-auto border rounded-lg">
+            <table class="w-full text-left text-xs text-slate-600">
+              <thead class="bg-slate-100 font-bold uppercase text-[10px]">
+                <tr>
+                  <th class="px-3 py-2">Nama</th>
+                  <th class="px-3 py-2">Email</th>
+                  <th class="px-3 py-2">Role</th>
+                  <th class="px-3 py-2">Status</th>
+                  <th class="px-3 py-2">Aksi</th>
+                </tr>
+              </thead>
+              <tbody id="tbody-akun-karyawan" class="divide-y divide-slate-100">
+                <tr><td colspan="5" class="text-center py-4 text-slate-400">Memuat data akun...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
     </div>
 
     <!-- 7. INPUT MEMO: BENDAHARA -->
@@ -503,13 +563,6 @@
       <div class="bg-white p-6 rounded-xl border shadow-sm max-w-xl mx-auto">
         <h3 class="font-bold text-orange-600 border-b pb-2">Arsip SPM</h3>
         <p class="text-xs text-slate-500 mt-2">Daftar arsip Surat Perintah Membayar yang telah dicairkan.</p>
-      </div>
-    </div>
-
-    <div id="page-users" class="page-view hidden space-y-4">
-      <div class="bg-white p-6 rounded-xl border shadow-sm max-w-xl mx-auto">
-        <h3 class="font-bold text-orange-600 border-b pb-2">Manajemen User</h3>
-        <p class="text-xs text-slate-500 mt-2">Khusus Operator / Super Admin: kelola akun dan role pegawai di sini.</p>
       </div>
     </div>
 

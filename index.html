@@ -20,57 +20,57 @@
 <body class="login-page flex items-center justify-center min-h-screen p-4 font-sans">
 
   <!-- CARD CONTAINER LOGIN -->
-  <div id="login-card" class="bg-white rounded-3xl max-w-md w-full p-8 sm:p-10 space-y-7 relative border border-slate-100">
+  <div id="login-card" class="bg-white rounded-3xl max-w-md w-full p-9 sm:p-11 space-y-8 relative border border-slate-100">
 
     <!-- LOGO & HEADER -->
     <div class="text-center space-y-3">
-      <div class="inline-flex items-center justify-center bg-white p-3 rounded-2xl mb-1 border border-slate-100 shadow-sm">
-        <img src="https://upload.wikimedia.org/wikipedia/commons/2/28/Lambang_Badan_Pusat_Statistik_%28BPS%29_Indonesia.svg" alt="Logo BPS" class="w-10 h-10">
+      <div class="inline-flex items-center justify-center bg-white p-3.5 rounded-2xl mb-1 border border-slate-100 shadow-sm">
+        <img src="https://upload.wikimedia.org/wikipedia/commons/2/28/Lambang_Badan_Pusat_Statistik_%28BPS%29_Indonesia.svg" alt="Logo BPS" class="w-11 h-11">
       </div>
       <div>
-        <h1 class="text-xl font-bold text-slate-900 tracking-tight">Sistem MONEV BPS</h1>
-        <p class="text-[11px] text-orange-600 font-semibold tracking-widest mt-1 uppercase">Kota Kotamobagu</p>
+        <h1 class="text-2xl font-bold text-slate-900 tracking-tight">Sistem MONEV BPS</h1>
+        <p class="text-xs text-orange-600 font-semibold tracking-widest mt-1.5 uppercase">Kota Kotamobagu</p>
       </div>
-      <p class="text-xs text-slate-400">Silakan masuk menggunakan akun BPS Anda</p>
+      <p class="text-sm text-slate-400">Silakan masuk menggunakan akun BPS Anda</p>
     </div>
 
     <!-- FORM LOGIN -->
-    <form id="form-login" onsubmit="handleLoginSubmit(event)" class="space-y-4 text-xs">
+    <form id="form-login" onsubmit="handleLoginSubmit(event)" class="space-y-5">
 
       <!-- INPUT EMAIL -->
       <div>
-        <label for="login-email" class="block font-semibold mb-1.5 text-slate-600">Email Pegawai BPS</label>
+        <label for="login-email" class="block text-sm font-semibold mb-1.5 text-slate-600">Email Pegawai BPS</label>
         <div class="relative">
-          <i data-lucide="mail" class="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400"></i>
+          <i data-lucide="mail" class="w-[18px] h-[18px] absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400"></i>
           <input
             type="email"
             id="login-email"
             placeholder="nama@bps.go.id"
             required
             autocomplete="username"
-            class="w-full border border-slate-200 rounded-xl pl-10 pr-3 py-3 text-xs text-slate-800 bg-slate-50 focus:bg-white focus:ring-2 focus:ring-orange-500/40 focus:border-orange-500 outline-none transition"
+            class="w-full border border-slate-200 rounded-xl pl-11 pr-3.5 py-3 text-sm text-slate-800 bg-slate-50 focus:bg-white focus:ring-2 focus:ring-orange-500/40 focus:border-orange-500 outline-none transition"
           >
         </div>
       </div>
 
       <!-- INPUT PASSWORD -->
       <div>
-        <label for="login-password" class="block font-semibold mb-1.5 text-slate-600">Kata Sandi (Password)</label>
+        <label for="login-password" class="block text-sm font-semibold mb-1.5 text-slate-600">Kata Sandi (Password)</label>
         <div class="relative">
-          <i data-lucide="lock" class="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400"></i>
+          <i data-lucide="lock" class="w-[18px] h-[18px] absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400"></i>
           <input
             type="password"
             id="login-password"
             placeholder="••••••••"
             required
             autocomplete="current-password"
-            class="w-full border border-slate-200 rounded-xl pl-10 pr-3 py-3 text-xs text-slate-800 bg-slate-50 focus:bg-white focus:ring-2 focus:ring-orange-500/40 focus:border-orange-500 outline-none transition"
+            class="w-full border border-slate-200 rounded-xl pl-11 pr-3.5 py-3 text-sm text-slate-800 bg-slate-50 focus:bg-white focus:ring-2 focus:ring-orange-500/40 focus:border-orange-500 outline-none transition"
           >
         </div>
       </div>
 
       <!-- ERROR MESSAGE CONTAINER -->
-      <div id="login-error-msg" class="hidden p-3 bg-red-50 text-red-600 rounded-xl text-[11px] font-medium border border-red-100 flex items-center gap-2">
+      <div id="login-error-msg" class="hidden p-3 bg-red-50 text-red-600 rounded-xl text-xs font-medium border border-red-100 flex items-center gap-2">
         <i data-lucide="alert-circle" class="w-4 h-4 shrink-0 text-red-500"></i>
         <span id="login-error-text">Email atau Kata Sandi salah!</span>
       </div>
@@ -79,7 +79,7 @@
       <button
         type="submit"
         id="btn-login-submit"
-        class="w-full bg-orange-600 hover:bg-orange-700 active:bg-orange-800 text-white py-3 rounded-xl font-bold shadow-lg shadow-orange-600/25 transition flex items-center justify-center gap-2 text-xs"
+        class="w-full bg-orange-600 hover:bg-orange-700 active:bg-orange-800 text-white py-3.5 rounded-xl font-bold shadow-lg shadow-orange-600/25 transition flex items-center justify-center gap-2 text-sm"
       >
         <span>Masuk ke Sistem</span>
         <i data-lucide="arrow-right" class="w-4 h-4"></i>
@@ -88,8 +88,8 @@
     </form>
 
     <!-- FOOTER INFO -->
-    <div class="border-t border-slate-100 pt-4 text-center">
-      <p class="text-[10px] text-slate-400 leading-relaxed">
+    <div class="border-t border-slate-100 pt-5 text-center">
+      <p class="text-xs text-slate-400 leading-relaxed">
         Belum memiliki akun atau lupa password? <br>
         Hubungi <span class="font-semibold text-slate-500">Operator SAS / Admin MONEV BPS Kota Kotamobagu</span>.
       </p>
