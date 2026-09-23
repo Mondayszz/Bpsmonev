@@ -172,7 +172,7 @@ firebase.auth().onAuthStateChanged(async (user) => {
   if (user) {
     // JIKA USER SUDAH LOGIN TAPI MASIH BUKA index.html (LOGIN PAGE)
     if (!isDashboardPage) {
-      window.location.href = "Dashboard.html";
+      window.location.href = "dashboard.html";
       return;
     }
 
