@@ -209,7 +209,7 @@ firebase.auth().onAuthStateChanged(async (user) => {
 });
 
 // FUNGSI SUBMIT LOGIN (DIPANGGIL DI index.html)
-async function handleStandaloneLoginSubmit(e) {
+async function handleLoginSubmit(e) {
   e.preventDefault();
 
   const emailInput = document.getElementById('login-email');
