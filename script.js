@@ -169,7 +169,6 @@ function subscribeRealtimeData() {
   });
 }
 
-// ISI DROPDOWN "PILIH BERKAS MASUK" SESUAI TAHAP MASING-MASING
 function populateBerkasDropdown(selectId, items) {
   const el = document.getElementById(selectId);
   if (!el) return;
@@ -183,8 +182,7 @@ function populateBerkasDropdown(selectId, items) {
 }
 
 // ==========================================================================
-// AUTHENTICATION & ROUTING UNTUK OPSI 1
-// (index.html = Halaman Login, dashboard.html = Halaman Utama/Dashboard)
+// AUTHENTICATION & ROUTING
 // ==========================================================================
 
 firebase.auth().onAuthStateChanged(async (user) => {
@@ -235,7 +233,6 @@ firebase.auth().onAuthStateChanged(async (user) => {
   }
 });
 
-// FUNGSI SUBMIT LOGIN (DIPANGGIL DI index.html)
 async function handleLoginSubmit(e) {
   e.preventDefault();
 
@@ -275,7 +272,6 @@ async function handleLoginSubmit(e) {
   }
 }
 
-// FUNGSI LOGOUT
 async function handleLogout() {
   if (confirm("Apakah Anda yakin ingin keluar dari sistem?")) {
     await firebase.auth().signOut();
@@ -743,7 +739,7 @@ async function handleUPFirebase(e) {
 }
 
 // ==========================================================================
-// REKAM SPBY: UPLOAD EXCEL (DENGAN DETEKSI HEADER FLEKSIBEL)
+// REKAM SPBY: UPLOAD EXCEL (DETEKSI HEADER FLEKSIBEL & UPDATE REALTIME CHART)
 // ==========================================================================
 function handleUploadSPBYExcel() {
   const fileInput = document.getElementById('spby-excel-file');
@@ -766,7 +762,6 @@ function handleUploadSPBYExcel() {
       const wb = XLSX.read(data, { type: 'array', cellDates: true });
       const sheet = wb.Sheets[wb.SheetNames[0]];
       
-      // Ambil seluruh data sebagai Array 2D
       const rows = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: '' });
 
       if (!rows.length) throw new Error('File Excel kosong atau format tidak sesuai.');
@@ -774,7 +769,7 @@ function handleUploadSPBYExcel() {
       let headerIndex = -1;
       let colTgl = -1, colUraian = -1, colNominal = -1;
 
-      // Cari baris header (15 baris pertama)
+      // Cari baris header pada 15 baris pertama
       for (let i = 0; i < Math.min(rows.length, 15); i++) {
         const row = rows[i].map(c => String(c).toLowerCase().trim());
         const tIndex = row.findIndex(c => c.includes('tgl') || c.includes('tanggal'));
@@ -790,7 +785,6 @@ function handleUploadSPBYExcel() {
         }
       }
 
-      // Fallback jika nama kolom tidak sesuai kata kunci baku
       if (headerIndex === -1) {
         headerIndex = 0;
         colTgl = 0;
@@ -850,16 +844,31 @@ function subscribeRekamSPBY() {
   const tbodyPage = document.getElementById('tbody-rekam-spby');
   const tbodyBeranda = document.getElementById('tbody-beranda-spby');
   const totalEl = document.getElementById('beranda-spby-total');
+  const metricRealisasi = document.getElementById('metric-realisasi-anggaran');
+  const chartHeaderRealisasi = document.getElementById('chart-header-realisasi');
   if (!tbodyPage && !tbodyBeranda) return;
 
   db.collection('rekam_spby').onSnapshot(snapshot => {
     const rows = [];
     let total = 0;
+    const bulanan = Array(12).fill(0);
+
     snapshot.forEach(doc => {
       const d = doc.data();
-      total += (d.nominal || 0);
+      const nom = Number(d.nominal || 0);
+      total += nom;
       rows.push(d);
+
+      // Hitung akumulasi bulanan untuk grafik realisasi
+      if (d.tanggal) {
+        const dateObj = new Date(d.tanggal);
+        if (!isNaN(dateObj.getTime())) {
+          const m = dateObj.getMonth();
+          bulanan[m] += nom;
+        }
+      }
     });
+
     rows.sort((a, b) => (b.tanggal || '').localeCompare(a.tanggal || ''));
 
     const renderRow = d => `<tr><td class="px-3 py-2">${d.tanggal || '-'}</td><td class="px-3 py-2">${d.uraian || '-'}</td><td class="px-3 py-2 text-right font-mono">Rp ${Number(d.nominal || 0).toLocaleString('id-ID')}</td></tr>`;
@@ -870,8 +879,50 @@ function subscribeRekamSPBY() {
     if (tbodyBeranda) {
       tbodyBeranda.innerHTML = rows.length ? rows.slice(0, 10).map(renderRow).join('') : `<tr><td colspan="3" class="text-center py-4 text-slate-400">Belum ada data SPBY.</td></tr>`;
     }
-    if (totalEl) totalEl.textContent = 'Rp ' + total.toLocaleString('id-ID');
+
+    const formattedTotal = 'Rp ' + total.toLocaleString('id-ID');
+    if (totalEl) totalEl.textContent = formattedTotal;
+    if (metricRealisasi) metricRealisasi.textContent = formattedTotal;
+    if (chartHeaderRealisasi) chartHeaderRealisasi.textContent = formattedTotal;
+
+    // Perbarui data grafik Realisasi di Beranda jika Chart instance tersedia
+    if (window.chartPaguRealisasiInstance) {
+      window.chartPaguRealisasiInstance.data.datasets[1].data = bulanan;
+      window.chartPaguRealisasiInstance.update();
+    }
   }, err => console.error('Gagal memuat rekam_spby:', err));
+}
+
+// Global variable untuk menyimpan Chart instance
+window.chartPaguRealisasiInstance = null;
+
+function initCharts() {
+  const ctxKinerja = document.getElementById('chartKinerjaAnggaran')?.getContext('2d');
+  if (ctxKinerja) {
+    new Chart(ctxKinerja, {
+      type: 'doughnut',
+      data: {
+        labels: ['Kinerja Perencanaan', 'Kinerja Pelaksanaan'],
+        datasets: [{ data: [45, 55], backgroundColor: ['#3b82f6', '#4f46e5'], borderWidth: 2 }]
+      },
+      options: { responsive: true, maintainAspectRatio: false }
+    });
+  }
+
+  const ctxRealisasi = document.getElementById('chartPaguRealisasi')?.getContext('2d');
+  if (ctxRealisasi) {
+    window.chartPaguRealisasiInstance = new Chart(ctxRealisasi, {
+      type: 'line',
+      data: {
+        labels: ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'],
+        datasets: [
+          { label: 'Pagu Anggaran', data: [500000000, 1000000000, 1500000000, 2000000000, 2500000000, 3000000000, 3500000000, 4000000000, 4500000000, 5000000000, 5500000000, 5960000000], borderColor: '#3b82f6', fill: false },
+          { label: 'Realisasi SPBY', data: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], borderColor: '#f59e0b', backgroundColor: 'rgba(245, 158, 11, 0.1)', fill: true }
+        ]
+      },
+      options: { responsive: true, maintainAspectRatio: false }
+    });
+  }
 }
 
 // ==========================================================================
