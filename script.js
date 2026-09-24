@@ -192,13 +192,11 @@ firebase.auth().onAuthStateChanged(async (user) => {
   const userProfileSec = document.getElementById('user-profile-section');
 
   if (user) {
-    // JIKA USER SUDAH LOGIN TAPI MASIH BUKA index.html (LOGIN PAGE)
     if (!isDashboardPage) {
       window.location.href = "dashboard.html";
       return;
     }
 
-    // AMBIL DATA ROLE/PROFIL DARI FIRESTORE DARI DASHBOARD
     try {
       const userDoc = await db.collection("users").doc(user.uid).get();
       if (userDoc.exists) {
@@ -212,7 +210,6 @@ firebase.auth().onAuthStateChanged(async (user) => {
         };
       }
 
-      // AKUN DINONAKTIFKAN OLEH ADMIN -> PAKSA LOGOUT
       if (currentUserData.status === "nonaktif") {
         alert("Akun Anda telah dinonaktifkan oleh Admin. Hubungi Operator MONEV.");
         await firebase.auth().signOut();
@@ -232,7 +229,6 @@ firebase.auth().onAuthStateChanged(async (user) => {
       console.error("Error fetching user profile:", err);
     }
   } else {
-    // JIKA USER BELUM LOGIN TAPI COBA BUKA dashboard.html
     if (isDashboardPage) {
       window.location.href = "index.html";
     }
@@ -262,7 +258,6 @@ async function handleLoginSubmit(e) {
 
   try {
     await firebase.auth().signInWithEmailAndPassword(email, pass);
-    // SETELAH BERHASIL LOGIN, REDIRECT KE DASHBOARD
     window.location.href = "dashboard.html";
   } catch (err) {
     let errorMsg = "Gagal login. Periksa email dan password Anda.";
@@ -290,9 +285,6 @@ async function handleLogout() {
 
 // ==========================================================================
 // SISTEM ROLE & AKSES MENU
-// null artinya semua pegawai yang login boleh akses (Beranda, Lembur,
-// Bukti Belanja, Arsip). Role lain wajib punya salah satu tag berikut,
-// kecuali role "Operator" / "Super Admin" yang selalu full akses.
 // ==========================================================================
 const PAGE_ROLES = {
   'page-beranda': null,
@@ -321,14 +313,12 @@ function applyRolePermissions(roles) {
     btn.classList.toggle('hidden', !allowed);
   });
 
-  // Sembunyikan grup submenu (Input Memo, dst) kalau semua child-nya tersembunyi
   document.querySelectorAll('[data-group]').forEach(group => {
     const buttons = group.querySelectorAll('[data-page]');
     const anyVisible = Array.from(buttons).some(b => !b.classList.contains('hidden'));
     group.classList.toggle('hidden', !anyVisible);
   });
 
-  // Kalau halaman yang sedang aktif ternyata tidak boleh diakses role ini, kembali ke Beranda
   const activePage = document.querySelector('.page-view:not(.hidden)');
   if (activePage) {
     const btnForActive = document.querySelector(`[data-page="${activePage.id}"]`);
@@ -339,9 +329,7 @@ function applyRolePermissions(roles) {
 }
 
 // ==========================================================================
-// KELOLA AKUN KARYAWAN (dibuat oleh role Operator / Super Admin)
-// Menggunakan Firebase App kedua supaya sesi admin yang sedang login
-// tidak ikut ter-logout saat membuat akun baru.
+// KELOLA AKUN KARYAWAN
 // ==========================================================================
 function getSecondaryAuth() {
   let secApp = firebase.apps.find(a => a.name === 'Secondary');
@@ -365,7 +353,6 @@ async function handleAkunKaryawanSubmit(e) {
   const editUid = document.getElementById('akun-edit-uid').value;
   const nama = document.getElementById('akun-nama').value;
   const email = document.getElementById('akun-email').value.trim();
-  const pass = document.getElementById('akun-password').value;
   const roles = getCheckedRoles();
   const btn = document.getElementById('btn-submit-akun');
 
@@ -384,7 +371,6 @@ async function handleAkunKaryawanSubmit(e) {
   btn.innerText = 'Menyimpan...';
 
   try {
-    // MODE EDIT: hanya update data role/nama di Firestore
     await db.collection('users').doc(editUid).set({
       nama, email, role: roles
     }, { merge: true });
@@ -494,7 +480,6 @@ async function handleSMSubmit(e) {
   btn.innerText = 'Mengecek nomor memo...';
 
   try {
-    // CEK NOMOR MEMO GANDA SEBELUM DISIMPAN
     const dup = await db.collection('berkas_keuangan').where('smNoMemo', '==', noMemo).limit(1).get();
     if (!dup.empty) {
       if (errEl) errEl.classList.remove('hidden');
@@ -517,7 +502,6 @@ async function handleSMSubmit(e) {
 
     alert('Data Subject Matter berhasil disimpan.');
     e.target.reset();
-    generateNoMemoSM();
   } catch (err) {
     console.error(err);
     alert('Gagal menyimpan data. Coba lagi. (' + (err.message || '') + ')');
@@ -621,7 +605,7 @@ async function handleBendaharaSubmit(e) {
 }
 
 // ==========================================================================
-// LEMBUR: PENGAJUAN & LAPORAN (durasi dalam HARI)
+// LEMBUR: PENGAJUAN & LAPORAN
 // ==========================================================================
 async function handlePengajuanLemburSubmit(e) {
   e.preventDefault();
@@ -690,9 +674,7 @@ async function handleLaporanLemburFirebase(e) {
 }
 
 // ==========================================================================
-// BELANJA UP: BUKTI BELANJA (foto dikompres lalu disimpan langsung di
-// Firestore sebagai base64 - TIDAK PAKAI Firebase Storage supaya tetap
-// gratis di plan Spark, tidak perlu upgrade Blaze/kartu kredit)
+// BELANJA UP & KOMPRESI FOTO BASE64
 // ==========================================================================
 function compressImageToBase64(file, maxWidth = 900, quality = 0.6) {
   return new Promise((resolve, reject) => {
@@ -761,7 +743,7 @@ async function handleUPFirebase(e) {
 }
 
 // ==========================================================================
-// REKAM SPBY: UPLOAD EXCEL -> FIRESTORE -> TAMPIL DI BERANDA
+// REKAM SPBY: UPLOAD EXCEL (DENGAN DETEKSI HEADER FLEKSIBEL)
 // ==========================================================================
 function handleUploadSPBYExcel() {
   const fileInput = document.getElementById('spby-excel-file');
@@ -781,32 +763,72 @@ function handleUploadSPBYExcel() {
   reader.onload = async (evt) => {
     try {
       const data = new Uint8Array(evt.target.result);
-      const wb = XLSX.read(data, { type: 'array' });
+      const wb = XLSX.read(data, { type: 'array', cellDates: true });
       const sheet = wb.Sheets[wb.SheetNames[0]];
-      const rows = XLSX.utils.sheet_to_json(sheet, { defval: '' });
+      
+      // Ambil seluruh data sebagai Array 2D
+      const rows = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: '' });
 
       if (!rows.length) throw new Error('File Excel kosong atau format tidak sesuai.');
 
+      let headerIndex = -1;
+      let colTgl = -1, colUraian = -1, colNominal = -1;
+
+      // Cari baris header (15 baris pertama)
+      for (let i = 0; i < Math.min(rows.length, 15); i++) {
+        const row = rows[i].map(c => String(c).toLowerCase().trim());
+        const tIndex = row.findIndex(c => c.includes('tgl') || c.includes('tanggal'));
+        const uIndex = row.findIndex(c => c.includes('uraian') || c.includes('keterangan') || c.includes('rincian'));
+        const nIndex = row.findIndex(c => c.includes('nominal') || c.includes('jumlah') || c.includes('kredit') || c.includes('debet') || c.includes('rp'));
+
+        if (tIndex !== -1 && uIndex !== -1 && nIndex !== -1) {
+          headerIndex = i;
+          colTgl = tIndex;
+          colUraian = uIndex;
+          colNominal = nIndex;
+          break;
+        }
+      }
+
+      // Fallback jika nama kolom tidak sesuai kata kunci baku
+      if (headerIndex === -1) {
+        headerIndex = 0;
+        colTgl = 0;
+        colUraian = 1;
+        colNominal = 2;
+      }
+
       const batch = db.batch();
       let count = 0;
-      rows.forEach(row => {
-        const tanggalRaw = row['Tanggal'] ?? row['tanggal'] ?? row['TANGGAL'] ?? '';
-        const uraian = row['Uraian'] ?? row['uraian'] ?? row['URAIAN'] ?? '';
-        const nominalRaw = row['Nominal'] ?? row['nominal'] ?? row['NOMINAL'] ?? 0;
+
+      for (let i = headerIndex + 1; i < rows.length; i++) {
+        const row = rows[i];
+        if (!row || !row.length) continue;
+
+        const tanggalRaw = row[colTgl] ?? '';
+        const uraian = String(row[colUraian] ?? '').trim();
+        const nominalRaw = row[colNominal] ?? 0;
+
         const nominal = parseFloat(String(nominalRaw).replace(/[^0-9.-]/g, '')) || 0;
-        if (!String(uraian).trim()) return;
+
+        if (!uraian || uraian.toLowerCase().includes('total') || nominal === 0) continue;
+
+        let tanggalStr = String(tanggalRaw);
+        if (tanggalRaw instanceof Date) {
+          tanggalStr = tanggalRaw.toISOString().split('T')[0];
+        }
 
         const ref = db.collection('rekam_spby').doc();
         batch.set(ref, {
-          tanggal: String(tanggalRaw),
-          uraian: String(uraian),
-          nominal,
+          tanggal: tanggalStr,
+          uraian: uraian,
+          nominal: nominal,
           createdAt: firebase.firestore.FieldValue.serverTimestamp()
         });
         count++;
-      });
+      }
 
-      if (count === 0) throw new Error('Tidak ada baris valid ditemukan. Pastikan ada kolom Tanggal, Uraian, Nominal.');
+      if (count === 0) throw new Error('Tidak ada baris valid ditemukan. Pastikan tabel memiliki kolom Tanggal, Uraian, dan Nominal.');
 
       await batch.commit();
       statusEl.textContent = `Berhasil menyimpan ${count} baris data dari Excel.`;
@@ -853,7 +875,7 @@ function subscribeRekamSPBY() {
 }
 
 // ==========================================================================
-// ARSIP: SK, KAK, SPM (metadata + link Google Drive)
+// ARSIP: SK, KAK, SPM
 // ==========================================================================
 async function handleArsipSubmit(e, kategori) {
   e.preventDefault();
