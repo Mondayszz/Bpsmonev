@@ -34,6 +34,7 @@ const firebaseConfig = {
 
 firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
+const storage = firebase.storage();
 
 let listBerkas = [];
 let listPengajuanLembur = [];
@@ -49,6 +50,10 @@ window.addEventListener('DOMContentLoaded', () => {
   initCharts();
   subscribeRealtimeData();
   subscribeUsersRealtime();
+  subscribeRekamSPBY();
+  subscribeArsip('SK');
+  subscribeArsip('KAK');
+  subscribeArsip('SPM');
 });
 
 // POPULATE DROPDOWNS & CHECKLIST PEGAWAI
@@ -158,7 +163,24 @@ function subscribeRealtimeData() {
         }
       });
     }
+
+    populateBerkasDropdown('ppk-select-berkas', listBerkas.filter(b => b.statusPosisi === 'SM'));
+    populateBerkasDropdown('ppspm-select-berkas', listBerkas.filter(b => b.statusPosisi === 'PPK'));
+    populateBerkasDropdown('bendahara-select-berkas', listBerkas.filter(b => b.statusPosisi === 'PPSPM'));
   });
+}
+
+// ISI DROPDOWN "PILIH BERKAS MASUK" SESUAI TAHAP MASING-MASING
+function populateBerkasDropdown(selectId, items) {
+  const el = document.getElementById(selectId);
+  if (!el) return;
+  const currentVal = el.value;
+  el.innerHTML = '<option value="">-- Pilih Berkas --</option>';
+  items.forEach(b => {
+    const label = `${b.smNoMemo || '(tanpa nomor)'} - ${(b.smUraian || '').slice(0, 40)}`;
+    el.innerHTML += `<option value="${b.id}">${label}</option>`;
+  });
+  if (items.some(b => b.id === currentVal)) el.value = currentVal;
 }
 
 // ==========================================================================
@@ -349,56 +371,39 @@ async function handleAkunKaryawanSubmit(e) {
   const btn = document.getElementById('btn-submit-akun');
 
   if (!nama) { alert('Pilih nama pegawai terlebih dahulu.'); return; }
+
+  if (!editUid) {
+    alert('Pembuatan akun baru dari halaman ini sedang dinonaktifkan. Buat akun login lewat Firebase Console \u2192 Authentication terlebih dahulu, lalu klik "Edit Role" pada akun tersebut di tabel bawah untuk mengatur role-nya.');
+    return;
+  }
+
   if (roles.length === 0 && !confirm('Belum ada role dicentang, pegawai ini hanya bisa akses menu umum (Beranda/Lembur/Belanja UP/Arsip). Lanjutkan?')) {
     return;
   }
 
   btn.disabled = true;
-  btn.innerText = editUid ? 'Menyimpan...' : 'Membuat Akun...';
+  btn.innerText = 'Menyimpan...';
 
   try {
-    if (editUid) {
-      // MODE EDIT: hanya update data role/nama di Firestore
-      await db.collection('users').doc(editUid).set({
-        nama, email, role: roles
-      }, { merge: true });
-      alert('Role/data pegawai berhasil diperbarui.');
-    } else {
-      // MODE BUAT BARU: perlu password, dibuat lewat secondary auth
-      if (!pass || pass.length < 6) {
-        alert('Password minimal 6 karakter.');
-        btn.disabled = false;
-        btn.innerText = 'Buat Akun & Simpan Role';
-        return;
-      }
-      const secondaryAuth = getSecondaryAuth();
-      const cred = await secondaryAuth.createUserWithEmailAndPassword(email, pass);
-      const uid = cred.user.uid;
-
-      await db.collection('users').doc(uid).set({
-        nama, email, role: roles, status: 'aktif',
-        createdAt: firebase.firestore.FieldValue.serverTimestamp()
-      });
-
-      await secondaryAuth.signOut();
-      alert('Akun berhasil dibuat. Sampaikan email & password awal ke pegawai bersangkutan.');
-    }
+    // MODE EDIT: hanya update data role/nama di Firestore
+    await db.collection('users').doc(editUid).set({
+      nama, email, role: roles
+    }, { merge: true });
+    alert('Role/data pegawai berhasil diperbarui.');
 
     cancelEditAkunKaryawan();
   } catch (err) {
     console.error(err);
-    let msg = 'Gagal menyimpan akun.';
-    if (err.code === 'auth/email-already-in-use') msg = 'Email tersebut sudah terdaftar.';
-    if (err.code === 'auth/invalid-email') msg = 'Format email tidak valid.';
-    if (err.code === 'auth/weak-password') msg = 'Password terlalu lemah (minimal 6 karakter).';
-    alert(msg);
+    alert('Gagal menyimpan perubahan role. (' + (err.message || '') + ')');
   } finally {
     btn.disabled = false;
-    btn.innerText = editUid ? 'Simpan Perubahan' : 'Buat Akun & Simpan Role';
+    btn.innerText = 'Simpan Perubahan';
   }
 }
 
 function startEditAkunKaryawan(uid, nama, email, roles) {
+  const form = document.getElementById('form-akun-karyawan');
+  form.classList.remove('hidden');
   document.getElementById('akun-edit-uid').value = uid;
   document.getElementById('akun-nama').value = nama;
   document.getElementById('akun-email').value = email;
@@ -406,17 +411,17 @@ function startEditAkunKaryawan(uid, nama, email, roles) {
   document.getElementById('akun-password-wrap').classList.add('hidden');
   setCheckedRoles(roles || []);
   document.getElementById('btn-submit-akun').innerText = 'Simpan Perubahan';
-  document.getElementById('btn-batal-edit-akun').classList.remove('hidden');
-  document.getElementById('form-akun-karyawan').scrollIntoView({ behavior: 'smooth', block: 'center' });
+  form.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  if (window.lucide) lucide.createIcons();
 }
 
 function cancelEditAkunKaryawan() {
-  document.getElementById('form-akun-karyawan').reset();
+  const form = document.getElementById('form-akun-karyawan');
+  form.reset();
   document.getElementById('akun-edit-uid').value = '';
   document.getElementById('akun-email').disabled = false;
-  document.getElementById('akun-password-wrap').classList.remove('hidden');
-  document.getElementById('btn-submit-akun').innerText = 'Buat Akun & Simpan Role';
-  document.getElementById('btn-batal-edit-akun').classList.add('hidden');
+  document.getElementById('akun-password-wrap').classList.add('hidden');
+  form.classList.add('hidden');
 }
 
 async function toggleUserStatus(uid, currentStatus) {
@@ -466,5 +471,414 @@ function subscribeUsersRealtime() {
   }, err => {
     console.error('Gagal memuat daftar akun:', err);
     tbody.innerHTML = `<tr><td colspan="5" class="text-center py-4 text-red-400">Gagal memuat data (cek Firestore rules).</td></tr>`;
+  });
+}
+
+// ==========================================================================
+// INPUT MEMO: SUBJECT MATTER -> PPK -> PPSPM -> BENDAHARA
+// ==========================================================================
+async function handleSMSubmit(e) {
+  e.preventDefault();
+  const noMemoEl = document.getElementById('sm-no-memo');
+  const pembuat = document.getElementById('sm-pembuat').value;
+  const noMemo = noMemoEl.value.trim();
+  const uraian = document.getElementById('sm-uraian').value.trim();
+  const tglPenyerahan = document.getElementById('sm-tgl-penyerahan').value;
+  const errEl = document.getElementById('sm-no-memo-error');
+  const btn = e.target.querySelector('button[type="submit"]');
+
+  if (errEl) errEl.classList.add('hidden');
+  if (!pembuat) { alert('Pilih nama pembuat terlebih dahulu.'); return; }
+  if (!noMemo) { alert('Nomor memo tidak boleh kosong.'); noMemoEl.focus(); return; }
+
+  btn.disabled = true;
+  btn.innerText = 'Mengecek nomor memo...';
+
+  try {
+    // CEK NOMOR MEMO GANDA SEBELUM DISIMPAN
+    const dup = await db.collection('berkas_keuangan').where('smNoMemo', '==', noMemo).limit(1).get();
+    if (!dup.empty) {
+      if (errEl) errEl.classList.remove('hidden');
+      noMemoEl.classList.add('border-red-400');
+      noMemoEl.focus();
+      return;
+    }
+    noMemoEl.classList.remove('border-red-400');
+
+    btn.innerText = 'Menyimpan...';
+    await db.collection('berkas_keuangan').add({
+      smPembuat: pembuat,
+      smNoMemo: noMemo,
+      smUraian: uraian,
+      smTglPenyerahan: tglPenyerahan,
+      statusPosisi: 'SM',
+      createdBy: firebase.auth().currentUser ? firebase.auth().currentUser.uid : null,
+      createdAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+
+    alert('Data Subject Matter berhasil disimpan.');
+    e.target.reset();
+    generateNoMemoSM();
+  } catch (err) {
+    console.error(err);
+    alert('Gagal menyimpan data. Coba lagi. (' + (err.message || '') + ')');
+  } finally {
+    btn.disabled = false;
+    btn.innerText = 'Simpan Subject Matter';
+  }
+}
+
+async function handlePPKSubmit(e) {
+  e.preventDefault();
+  const berkasId = document.getElementById('ppk-select-berkas').value;
+  const tglTerima = document.getElementById('ppk-tgl-terima').value;
+  const penerima = document.getElementById('ppk-penerima').value;
+  const status = document.getElementById('ppk-status').value;
+  const catatan = document.getElementById('ppk-catatan').value.trim();
+  const btn = e.target.querySelector('button[type="submit"]');
+
+  if (!berkasId) { alert('Pilih berkas masuk terlebih dahulu.'); return; }
+
+  btn.disabled = true;
+  btn.innerText = 'Menyimpan...';
+  try {
+    await db.collection('berkas_keuangan').doc(berkasId).update({
+      ppkTglTerima: tglTerima,
+      ppkPenerima: penerima,
+      ppkStatus: status,
+      ppkCatatan: catatan,
+      statusPosisi: status === 'Diteruskan' ? 'PPK' : 'Dikembalikan (PPK)'
+    });
+    alert('Verifikasi PPK berhasil disimpan.');
+    e.target.reset();
+  } catch (err) {
+    console.error(err);
+    alert('Gagal menyimpan. Kemungkinan berkas sudah diproses pihak lain. (' + (err.message || '') + ')');
+  } finally {
+    btn.disabled = false;
+    btn.innerText = 'Simpan Verifikasi PPK';
+  }
+}
+
+async function handlePPSPMSubmit(e) {
+  e.preventDefault();
+  const berkasId = document.getElementById('ppspm-select-berkas').value;
+  const tglTerima = document.getElementById('ppspm-tgl-terima').value;
+  const status = document.getElementById('ppspm-status').value;
+  const catatan = document.getElementById('ppspm-catatan').value.trim();
+  const btn = e.target.querySelector('button[type="submit"]');
+
+  if (!berkasId) { alert('Pilih berkas masuk terlebih dahulu.'); return; }
+
+  btn.disabled = true;
+  btn.innerText = 'Menyimpan...';
+  try {
+    await db.collection('berkas_keuangan').doc(berkasId).update({
+      ppspmTglTerima: tglTerima,
+      ppspmStatus: status,
+      ppspmCatatan: catatan,
+      statusPosisi: status === 'Diteruskan' ? 'PPSPM' : 'Dikembalikan (PPSPM)'
+    });
+    alert('Pengujian PPSPM berhasil disimpan.');
+    e.target.reset();
+  } catch (err) {
+    console.error(err);
+    alert('Gagal menyimpan. Kemungkinan berkas sudah diproses pihak lain. (' + (err.message || '') + ')');
+  } finally {
+    btn.disabled = false;
+    btn.innerText = 'Simpan Pengujian PPSPM';
+  }
+}
+
+async function handleBendaharaSubmit(e) {
+  e.preventDefault();
+  const berkasId = document.getElementById('bendahara-select-berkas').value;
+  const pembuat = document.getElementById('bendahara-pembuat').value;
+  const tglSp2d = document.getElementById('bendahara-tgl-sp2d').value;
+  const tglTransfer = document.getElementById('bendahara-tgl-transfer').value;
+  const btn = e.target.querySelector('button[type="submit"]');
+
+  if (!berkasId) { alert('Pilih berkas teruji terlebih dahulu.'); return; }
+  if (!pembuat) { alert('Pilih nama bendahara.'); return; }
+
+  btn.disabled = true;
+  btn.innerText = 'Menyimpan...';
+  try {
+    await db.collection('berkas_keuangan').doc(berkasId).update({
+      bendaharaPembuat: pembuat,
+      bendaharaTglSp2d: tglSp2d,
+      bendaharaTglTransfer: tglTransfer,
+      statusPosisi: 'Selesai'
+    });
+    alert('Pencairan Bendahara berhasil disimpan. Berkas selesai diproses.');
+    e.target.reset();
+  } catch (err) {
+    console.error(err);
+    alert('Gagal menyimpan. Kemungkinan berkas sudah diproses pihak lain. (' + (err.message || '') + ')');
+  } finally {
+    btn.disabled = false;
+    btn.innerText = 'Simpan Pencairan Bendahara';
+  }
+}
+
+// ==========================================================================
+// LEMBUR: PENGAJUAN & LAPORAN (durasi dalam HARI)
+// ==========================================================================
+async function handlePengajuanLemburSubmit(e) {
+  e.preventDefault();
+  const ketua = document.getElementById('lembur-ketua').value;
+  const tglPengajuan = document.getElementById('lembur-tgl-pengajuan').value;
+  const tglMulai = document.getElementById('lembur-tgl-mulai').value;
+  const durasiHari = parseFloat(document.getElementById('lembur-durasi').value);
+  const peserta = Array.from(document.querySelectorAll('input[name="chk-peserta-lembur"]:checked')).map(el => el.value);
+  const btn = e.target.querySelector('button[type="submit"]');
+
+  if (!ketua) { alert('Pilih nama ketua tim.'); return; }
+  if (!durasiHari || durasiHari <= 0) { alert('Isi durasi lembur (hari) dengan benar.'); return; }
+
+  btn.disabled = true;
+  btn.innerText = 'Menyimpan...';
+  try {
+    await db.collection('pengajuan_lembur').add({
+      ketua, tglPengajuan, tglMulai, durasiHari, peserta,
+      createdAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+    alert('Pengajuan lembur berhasil disimpan.');
+    e.target.reset();
+  } catch (err) {
+    console.error(err);
+    alert('Gagal menyimpan pengajuan lembur. (' + (err.message || '') + ')');
+  } finally {
+    btn.disabled = false;
+    btn.innerText = 'Simpan Pengajuan Lembur';
+  }
+}
+
+async function handleLaporanLemburFirebase(e) {
+  e.preventDefault();
+  const nama = document.getElementById('lap-nama').value;
+  const tgl = document.getElementById('lap-tgl').value;
+  const durasiHari = parseFloat(document.getElementById('lap-durasi').value);
+  const output = document.getElementById('lap-output').value.trim();
+  const fotoFile = document.getElementById('lap-foto').files[0];
+  const btn = document.getElementById('btn-submit-lembur');
+
+  if (!nama) { alert('Pilih nama peserta.'); return; }
+  if (!durasiHari || durasiHari <= 0) { alert('Isi durasi lembur (hari) dengan benar.'); return; }
+
+  btn.disabled = true;
+  btn.innerText = 'Mengunggah...';
+  try {
+    const fotoUrl = await uploadFileToStorage(fotoFile, 'laporan_lembur');
+
+    btn.innerText = 'Menyimpan...';
+    await db.collection('laporan_lembur').add({
+      nama, tgl, durasiHari, output, fotoUrl,
+      createdAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+    alert('Laporan lembur berhasil disimpan.');
+    e.target.reset();
+  } catch (err) {
+    console.error(err);
+    alert('Gagal menyimpan laporan lembur. (' + (err.message || '') + ')');
+  } finally {
+    btn.disabled = false;
+    btn.innerText = 'Simpan Laporan Lembur';
+  }
+}
+
+// ==========================================================================
+// BELANJA UP: BUKTI BELANJA (upload nota ke Firebase Storage)
+// ==========================================================================
+async function uploadFileToStorage(file, folder) {
+  if (!file) return null;
+  const ref = storage.ref().child(`${folder}/${Date.now()}_${file.name}`);
+  const snap = await ref.put(file);
+  return await snap.ref.getDownloadURL();
+}
+
+async function handleUPFirebase(e) {
+  e.preventDefault();
+  const tgl = document.getElementById('up-tgl').value;
+  const jenis = document.getElementById('up-jenis').value;
+  const toko = document.getElementById('up-toko').value.trim();
+  const nominal = parseFloat(document.getElementById('up-nominal').value);
+  const buktiFile = document.getElementById('up-bukti').files[0];
+  const btn = document.getElementById('btn-submit-up');
+
+  if (!toko || !nominal) { alert('Lengkapi nama toko dan nominal.'); return; }
+
+  btn.disabled = true;
+  btn.innerText = 'Mengunggah...';
+  try {
+    const buktiUrl = await uploadFileToStorage(buktiFile, 'bukti_belanja');
+
+    btn.innerText = 'Menyimpan...';
+    await db.collection('belanja_up').add({
+      tgl, jenis, toko, nominal, buktiUrl,
+      createdAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+    alert('Bukti belanja UP berhasil disimpan.');
+    e.target.reset();
+  } catch (err) {
+    console.error(err);
+    alert('Gagal menyimpan bukti belanja. (' + (err.message || '') + ')');
+  } finally {
+    btn.disabled = false;
+    btn.innerText = 'Simpan Belanja UP';
+  }
+}
+
+// ==========================================================================
+// REKAM SPBY: UPLOAD EXCEL -> FIRESTORE -> TAMPIL DI BERANDA
+// ==========================================================================
+function handleUploadSPBYExcel() {
+  const fileInput = document.getElementById('spby-excel-file');
+  const statusEl = document.getElementById('spby-upload-status');
+  const btn = document.getElementById('btn-upload-spby');
+  const file = fileInput.files[0];
+
+  if (!file) { alert('Pilih file Excel terlebih dahulu.'); return; }
+  if (typeof XLSX === 'undefined') { alert('Library pembaca Excel belum termuat, coba refresh halaman.'); return; }
+
+  btn.disabled = true;
+  btn.innerText = 'Memproses...';
+  statusEl.textContent = '';
+  statusEl.className = 'text-xs font-medium';
+
+  const reader = new FileReader();
+  reader.onload = async (evt) => {
+    try {
+      const data = new Uint8Array(evt.target.result);
+      const wb = XLSX.read(data, { type: 'array' });
+      const sheet = wb.Sheets[wb.SheetNames[0]];
+      const rows = XLSX.utils.sheet_to_json(sheet, { defval: '' });
+
+      if (!rows.length) throw new Error('File Excel kosong atau format tidak sesuai.');
+
+      const batch = db.batch();
+      let count = 0;
+      rows.forEach(row => {
+        const tanggalRaw = row['Tanggal'] ?? row['tanggal'] ?? row['TANGGAL'] ?? '';
+        const uraian = row['Uraian'] ?? row['uraian'] ?? row['URAIAN'] ?? '';
+        const nominalRaw = row['Nominal'] ?? row['nominal'] ?? row['NOMINAL'] ?? 0;
+        const nominal = parseFloat(String(nominalRaw).replace(/[^0-9.-]/g, '')) || 0;
+        if (!String(uraian).trim()) return;
+
+        const ref = db.collection('rekam_spby').doc();
+        batch.set(ref, {
+          tanggal: String(tanggalRaw),
+          uraian: String(uraian),
+          nominal,
+          createdAt: firebase.firestore.FieldValue.serverTimestamp()
+        });
+        count++;
+      });
+
+      if (count === 0) throw new Error('Tidak ada baris valid ditemukan. Pastikan ada kolom Tanggal, Uraian, Nominal.');
+
+      await batch.commit();
+      statusEl.textContent = `Berhasil menyimpan ${count} baris data dari Excel.`;
+      statusEl.classList.add('text-emerald-600');
+      fileInput.value = '';
+    } catch (err) {
+      console.error(err);
+      statusEl.textContent = 'Gagal memproses file: ' + err.message;
+      statusEl.classList.add('text-red-600');
+    } finally {
+      btn.disabled = false;
+      btn.innerText = 'Proses & Simpan Data Excel';
+    }
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+function subscribeRekamSPBY() {
+  const tbodyPage = document.getElementById('tbody-rekam-spby');
+  const tbodyBeranda = document.getElementById('tbody-beranda-spby');
+  const totalEl = document.getElementById('beranda-spby-total');
+  if (!tbodyPage && !tbodyBeranda) return;
+
+  db.collection('rekam_spby').onSnapshot(snapshot => {
+    const rows = [];
+    let total = 0;
+    snapshot.forEach(doc => {
+      const d = doc.data();
+      total += (d.nominal || 0);
+      rows.push(d);
+    });
+    rows.sort((a, b) => (b.tanggal || '').localeCompare(a.tanggal || ''));
+
+    const renderRow = d => `<tr><td class="px-3 py-2">${d.tanggal || '-'}</td><td class="px-3 py-2">${d.uraian || '-'}</td><td class="px-3 py-2 text-right font-mono">Rp ${Number(d.nominal || 0).toLocaleString('id-ID')}</td></tr>`;
+
+    if (tbodyPage) {
+      tbodyPage.innerHTML = rows.length ? rows.map(renderRow).join('') : `<tr><td colspan="3" class="text-center py-4 text-slate-400">Belum ada data.</td></tr>`;
+    }
+    if (tbodyBeranda) {
+      tbodyBeranda.innerHTML = rows.length ? rows.slice(0, 10).map(renderRow).join('') : `<tr><td colspan="3" class="text-center py-4 text-slate-400">Belum ada data SPBY.</td></tr>`;
+    }
+    if (totalEl) totalEl.textContent = 'Rp ' + total.toLocaleString('id-ID');
+  }, err => console.error('Gagal memuat rekam_spby:', err));
+}
+
+// ==========================================================================
+// ARSIP: SK, KAK, SPM (metadata + link Google Drive)
+// ==========================================================================
+async function handleArsipSubmit(e, kategori) {
+  e.preventDefault();
+  const form = e.target;
+  const nama = form.querySelector('[data-f="nama"]').value.trim();
+  const nomor = form.querySelector('[data-f="nomor"]').value.trim();
+  const tanggal = form.querySelector('[data-f="tanggal"]').value;
+  const link = form.querySelector('[data-f="link"]').value.trim();
+  const btn = form.querySelector('button[type="submit"]');
+
+  if (!link.includes('drive.google.com')) {
+    alert('Link file harus berupa link Google Drive (upload dulu ke folder yang tersedia, lalu tempel link share-nya di sini).');
+    return;
+  }
+
+  btn.disabled = true;
+  btn.innerText = 'Menyimpan...';
+  try {
+    await db.collection('arsip').add({
+      kategori, nama, nomor, tanggal, link,
+      createdAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+    alert(`Data arsip ${kategori} berhasil disimpan.`);
+    form.reset();
+  } catch (err) {
+    console.error(err);
+    alert('Gagal menyimpan data arsip. (' + (err.message || '') + ')');
+  } finally {
+    btn.disabled = false;
+    btn.innerText = `Simpan Data Arsip ${kategori}`;
+  }
+}
+
+function subscribeArsip(kategori) {
+  const tbody = document.getElementById('tbody-arsip-' + kategori);
+  if (!tbody) return;
+
+  db.collection('arsip').where('kategori', '==', kategori).onSnapshot(snapshot => {
+    if (snapshot.empty) {
+      tbody.innerHTML = `<tr><td colspan="4" class="text-center py-4 text-slate-400">Belum ada data.</td></tr>`;
+      return;
+    }
+    const items = [];
+    snapshot.forEach(doc => items.push(doc.data()));
+    items.sort((a, b) => (b.tanggal || '').localeCompare(a.tanggal || ''));
+
+    tbody.innerHTML = items.map(d => `
+      <tr>
+        <td class="px-3 py-2 font-medium text-slate-800">${d.nama || '-'}</td>
+        <td class="px-3 py-2">${d.nomor || '-'}</td>
+        <td class="px-3 py-2">${d.tanggal || '-'}</td>
+        <td class="px-3 py-2"><a href="${d.link}" target="_blank" rel="noopener" class="text-blue-600 hover:underline font-medium">Buka File</a></td>
+      </tr>
+    `).join('');
+  }, err => {
+    console.error('Gagal memuat arsip ' + kategori, err);
+    tbody.innerHTML = `<tr><td colspan="4" class="text-center py-4 text-red-400">Gagal memuat data.</td></tr>`;
   });
 }

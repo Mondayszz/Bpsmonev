@@ -18,6 +18,9 @@
   <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-storage-compat.js"></script>
+  <!-- SheetJS untuk baca file Excel (Rekam SPBY) -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 
   <link rel="stylesheet" href="style.css">
 </head>
@@ -304,6 +307,24 @@
         </div>
       </div>
 
+      <!-- REKAP SPBY DARI EXCEL -->
+      <div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+        <div class="p-4 bg-slate-50/70 border-b border-slate-100 font-bold text-sm text-slate-700 flex items-center justify-between">
+          <span>Rekap SPBY Bendahara (dari Excel)</span>
+          <span id="beranda-spby-total" class="text-orange-600 font-bold">Rp 0</span>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-sm text-slate-600">
+            <thead class="bg-slate-50 text-[11px] font-bold uppercase text-slate-500 tracking-wide">
+              <tr><th class="px-4 py-3">Tanggal</th><th class="px-4 py-3">Uraian</th><th class="px-4 py-3 text-right">Nominal</th></tr>
+            </thead>
+            <tbody id="tbody-beranda-spby" class="divide-y divide-slate-100">
+              <tr><td colspan="3" class="text-center py-4 text-slate-400">Belum ada data SPBY.</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
     </div>
 
     <!-- 2. DASHBOARD INPUT -->
@@ -350,7 +371,14 @@
       <div class="bg-white p-7 rounded-2xl border border-slate-100 shadow-sm max-w-xl mx-auto space-y-5">
         <h3 class="font-bold text-orange-600 border-b border-slate-100 pb-3 mb-1 text-base tracking-tight">Form Input Subject Matter</h3>
         <form id="form-sm" onsubmit="handleSMSubmit(event)" class="space-y-3 text-sm">
-          <div><label class="block text-sm font-semibold mb-1.5 text-slate-600">No Memo SM</label><input type="text" id="sm-no-memo" readonly class="w-full bg-slate-100 border rounded px-3 py-2 font-mono"></div>
+          <div>
+            <label class="block text-sm font-semibold mb-1.5 text-slate-600">No Memo SM</label>
+            <div class="flex gap-2">
+              <input type="text" id="sm-no-memo" required placeholder="Contoh: SM/010926/123/BPS7174" class="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm bg-slate-50 focus:bg-white focus:ring-2 focus:ring-orange-500/30 focus:border-orange-500 outline-none transition font-mono">
+              <button type="button" onclick="generateNoMemoSM()" title="Buat nomor otomatis" class="shrink-0 px-3 rounded-xl border border-slate-200 text-slate-500 hover:bg-slate-50 transition"><i data-lucide="refresh-cw" class="w-4 h-4"></i></button>
+            </div>
+            <p id="sm-no-memo-error" class="hidden text-[11px] text-red-600 font-medium mt-1">Nomor memo ini sudah pernah dipakai. Silakan ganti atau klik tombol acak ulang.</p>
+          </div>
           <div><label class="block text-sm font-semibold mb-1.5 text-slate-600">Nama Pembuat</label><select id="sm-pembuat" required class="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm bg-white focus:ring-2 focus:ring-orange-500/30 focus:border-orange-500 outline-none transition"></select></div>
           <div><label class="block text-sm font-semibold mb-1.5 text-slate-600">Uraian Kegiatan</label><textarea id="sm-uraian" required placeholder="Rincian kegiatan" class="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm bg-slate-50 focus:bg-white focus:ring-2 focus:ring-orange-500/30 focus:border-orange-500 outline-none transition" rows="3"></textarea></div>
           <div><label class="block text-sm font-semibold mb-1.5 text-slate-600">Tanggal Penyerahan ke PPK</label><input type="date" id="sm-tgl-penyerahan" required class="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm bg-slate-50 focus:bg-white focus:ring-2 focus:ring-orange-500/30 focus:border-orange-500 outline-none transition"></div>
@@ -399,14 +427,14 @@
         <button onclick="navigateTo('page-bendahara')" class="bg-orange-600 hover:bg-orange-700 active:bg-orange-800 text-white px-4 py-2.5 rounded-xl font-bold w-full transition shadow-sm shadow-orange-600/20">Lanjut ke Bendahara</button>
       </div>
 
-      <!-- KELOLA AKUN KARYAWAN & ROLE -->
+      <!-- KELOLA ROLE AKUN KARYAWAN -->
       <div class="bg-white p-6 rounded-xl border shadow-sm max-w-2xl mx-auto space-y-5">
         <div class="border-b pb-2">
-          <h3 class="font-bold text-orange-600">Kelola Akun Karyawan</h3>
-          <p class="text-xs text-slate-400 mt-1">Buat akun login untuk pegawai dan tentukan role/akses menunya.</p>
+          <h3 class="font-bold text-orange-600">Kelola Role Akun Karyawan</h3>
+          <p class="text-xs text-slate-400 mt-1">Pembuatan akun baru untuk sementara dinonaktifkan di halaman ini. Buat akun login lewat Firebase Console &rarr; Authentication, lalu atur role &amp; status aksesnya di sini.</p>
         </div>
 
-        <form id="form-akun-karyawan" onsubmit="handleAkunKaryawanSubmit(event)" class="space-y-3 text-sm">
+        <form id="form-akun-karyawan" onsubmit="handleAkunKaryawanSubmit(event)" class="hidden space-y-3 text-sm">
           <input type="hidden" id="akun-edit-uid" value="">
 
           <div><label class="block text-sm font-semibold mb-1.5 text-slate-600">Nama Pegawai</label>
@@ -417,7 +445,7 @@
             <input type="email" id="akun-email" required placeholder="nama@bps.go.id" class="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm bg-slate-50 focus:bg-white focus:ring-2 focus:ring-orange-500/30 focus:border-orange-500 outline-none transition">
           </div>
 
-          <div id="akun-password-wrap">
+          <div id="akun-password-wrap" class="hidden">
             <label class="block text-sm font-semibold mb-1.5 text-slate-600">Password Awal</label>
             <input type="text" id="akun-password" placeholder="Minimal 6 karakter" class="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm bg-slate-50 focus:bg-white focus:ring-2 focus:ring-orange-500/30 focus:border-orange-500 outline-none transition">
             <p class="text-[11px] text-slate-400 mt-1">Sampaikan password ini ke pegawai. Bisa diganti sendiri oleh pegawai nanti.</p>
@@ -437,8 +465,8 @@
           </div>
 
           <div class="flex gap-2">
-            <button type="submit" id="btn-submit-akun" class="bg-orange-600 hover:bg-orange-700 active:bg-orange-800 text-white px-4 py-2.5 rounded-xl font-bold w-full transition shadow-sm shadow-orange-600/20">Buat Akun & Simpan Role</button>
-            <button type="button" id="btn-batal-edit-akun" onclick="cancelEditAkunKaryawan()" class="hidden bg-slate-100 text-slate-600 px-4 py-2 rounded font-bold">Batal</button>
+            <button type="submit" id="btn-submit-akun" class="bg-orange-600 hover:bg-orange-700 active:bg-orange-800 text-white px-4 py-2.5 rounded-xl font-bold w-full transition shadow-sm shadow-orange-600/20">Simpan Perubahan</button>
+            <button type="button" id="btn-batal-edit-akun" onclick="cancelEditAkunKaryawan()" class="bg-slate-100 text-slate-600 px-4 py-2 rounded font-bold">Batal</button>
           </div>
         </form>
 
@@ -491,7 +519,7 @@
             <div><label class="block text-sm font-semibold mb-1.5 text-slate-600">Tgl Pengajuan</label><input type="date" id="lembur-tgl-pengajuan" required class="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm bg-slate-50 focus:bg-white focus:ring-2 focus:ring-orange-500/30 focus:border-orange-500 outline-none transition"></div>
             <div><label class="block text-sm font-semibold mb-1.5 text-slate-600">Tgl Mulai</label><input type="date" id="lembur-tgl-mulai" required class="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm bg-slate-50 focus:bg-white focus:ring-2 focus:ring-orange-500/30 focus:border-orange-500 outline-none transition"></div>
           </div>
-          <div><label class="block text-sm font-semibold mb-1.5 text-slate-600">Durasi (Jam)</label><input type="number" id="lembur-durasi" required class="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm bg-slate-50 focus:bg-white focus:ring-2 focus:ring-orange-500/30 focus:border-orange-500 outline-none transition"></div>
+          <div><label class="block text-sm font-semibold mb-1.5 text-slate-600">Durasi (Hari)</label><input type="number" id="lembur-durasi" min="0.5" step="0.5" placeholder="Contoh: 1 atau 0.5" required class="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm bg-slate-50 focus:bg-white focus:ring-2 focus:ring-orange-500/30 focus:border-orange-500 outline-none transition"></div>
           <div>
             <label class="block text-sm font-semibold mb-1.5 text-slate-600">Peserta Lembur (Checklist Multiple)</label>
             <div id="container-lembur-peserta" class="max-h-48 overflow-y-auto border rounded p-3 bg-slate-50 space-y-1 text-xs">
@@ -511,7 +539,7 @@
           <div><label class="block text-sm font-semibold mb-1.5 text-slate-600">Nama Peserta</label><select id="lap-nama" required class="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm bg-white focus:ring-2 focus:ring-orange-500/30 focus:border-orange-500 outline-none transition"></select></div>
           <div class="grid grid-cols-2 gap-3">
             <div><label class="block text-sm font-semibold mb-1.5 text-slate-600">Tanggal</label><input type="date" id="lap-tgl" required class="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm bg-slate-50 focus:bg-white focus:ring-2 focus:ring-orange-500/30 focus:border-orange-500 outline-none transition"></div>
-            <div><label class="block text-sm font-semibold mb-1.5 text-slate-600">Jam</label><input type="time" id="lap-jam" required class="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm bg-slate-50 focus:bg-white focus:ring-2 focus:ring-orange-500/30 focus:border-orange-500 outline-none transition"></div>
+            <div><label class="block text-sm font-semibold mb-1.5 text-slate-600">Durasi (Hari)</label><input type="number" id="lap-durasi" min="0.5" step="0.5" placeholder="Contoh: 1 atau 0.5" required class="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm bg-slate-50 focus:bg-white focus:ring-2 focus:ring-orange-500/30 focus:border-orange-500 outline-none transition"></div>
           </div>
           <div><label class="block text-sm font-semibold mb-1.5 text-slate-600">Output Pekerjaan</label><textarea id="lap-output" required class="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm bg-slate-50 focus:bg-white focus:ring-2 focus:ring-orange-500/30 focus:border-orange-500 outline-none transition" rows="3"></textarea></div>
           <div><label class="block text-sm font-semibold mb-1.5 text-slate-600">Upload Foto</label><input type="file" id="lap-foto" accept="image/*" class="w-full border border-slate-200 rounded-xl px-3 py-2 text-xs bg-slate-50 focus:bg-white transition"></div>
@@ -522,10 +550,34 @@
 
     <!-- 10. BELANJA UP: REKAM SPBY -->
     <div id="page-rekam-spby" class="page-view hidden space-y-5">
-      <div class="bg-white p-6 rounded-xl border shadow-sm max-w-xl mx-auto text-sm space-y-3">
+      <div class="bg-white p-7 rounded-2xl border border-slate-100 shadow-sm max-w-xl mx-auto space-y-4">
         <h3 class="font-bold text-orange-600 border-b border-slate-100 pb-3 mb-1 text-base tracking-tight">Rekam SPBY Bendahara</h3>
-        <p class="text-slate-500">Form Perekaman SPBY sebelum mengunggah bukti belanja.</p>
-        <button onclick="navigateTo('page-up')" class="bg-orange-600 hover:bg-orange-700 active:bg-orange-800 text-white px-4 py-2.5 rounded-xl font-bold w-full transition shadow-sm shadow-orange-600/20">Lanjut ke Bukti Belanja</button>
+        <p class="text-sm text-slate-500">Upload file Excel (.xlsx/.xls) berisi data SPBY. Data akan otomatis tersimpan dan muncul di Beranda.</p>
+
+        <div>
+          <label class="block text-sm font-semibold mb-1.5 text-slate-600">File Excel SPBY</label>
+          <input type="file" id="spby-excel-file" accept=".xlsx,.xls" class="w-full border border-slate-200 rounded-xl px-3 py-2 text-xs bg-slate-50 focus:bg-white transition">
+          <p class="text-[11px] text-slate-400 mt-1">Kolom yang dibaca (baris pertama = header): <b>Tanggal, Uraian, Nominal</b>. Nama kolom lain akan diabaikan.</p>
+        </div>
+
+        <button type="button" onclick="handleUploadSPBYExcel()" id="btn-upload-spby" class="bg-orange-600 hover:bg-orange-700 active:bg-orange-800 text-white px-4 py-2.5 rounded-xl font-bold w-full transition shadow-sm shadow-orange-600/20">Proses & Simpan Data Excel</button>
+        <p id="spby-upload-status" class="text-xs font-medium"></p>
+
+        <div class="border-t border-slate-100 pt-4">
+          <h4 class="font-bold text-slate-700 text-xs uppercase tracking-wide mb-2">Riwayat Data SPBY Tersimpan</h4>
+          <div class="overflow-x-auto border rounded-xl">
+            <table class="w-full text-left text-xs text-slate-600">
+              <thead class="bg-slate-50 text-[11px] font-bold uppercase text-slate-500 tracking-wide">
+                <tr><th class="px-3 py-2">Tanggal</th><th class="px-3 py-2">Uraian</th><th class="px-3 py-2 text-right">Nominal</th></tr>
+              </thead>
+              <tbody id="tbody-rekam-spby" class="divide-y divide-slate-100">
+                <tr><td colspan="3" class="text-center py-4 text-slate-400">Belum ada data.</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <button onclick="navigateTo('page-up')" class="bg-slate-100 hover:bg-slate-200 text-slate-700 px-4 py-2.5 rounded-xl font-bold w-full transition">Lanjut ke Bukti Belanja</button>
       </div>
     </div>
 
@@ -546,23 +598,89 @@
 
     <!-- 12. ARSIP: SK, KAK, SPM -->
     <div id="page-arsip-sk" class="page-view hidden space-y-5">
-      <div class="bg-white p-7 rounded-2xl border border-slate-100 shadow-sm max-w-xl mx-auto">
-        <h3 class="font-bold text-orange-600 border-b border-slate-100 pb-3 mb-1 text-base tracking-tight">Arsip SK</h3>
-        <p class="text-xs text-slate-500 mt-2">Daftar arsip Surat Keputusan pelaksanaan operasional.</p>
+      <div class="bg-white p-7 rounded-2xl border border-slate-100 shadow-sm max-w-xl mx-auto space-y-4">
+        <div class="flex items-center justify-between border-b border-slate-100 pb-3 mb-1">
+          <h3 class="font-bold text-orange-600 text-base tracking-tight">Arsip SK</h3>
+          <a href="https://drive.google.com/drive/folders/12d6-RS0-COTHXLIuzoUQBsrOqejZ3Bvm" target="_blank" rel="noopener" class="text-xs font-bold text-blue-600 hover:underline flex items-center gap-1"><i data-lucide="external-link" class="w-3.5 h-3.5"></i> Buka Folder Drive</a>
+        </div>
+        <p class="text-xs text-slate-500 -mt-2">Upload file PDF/Word/Excel ke folder Drive di atas terlebih dahulu, lalu catat metadatanya + tempel link file di bawah ini.</p>
+
+        <form onsubmit="handleArsipSubmit(event, 'SK')" class="space-y-3 text-sm">
+          <div><label class="block text-sm font-semibold mb-1.5 text-slate-600">Nama File / Judul</label><input type="text" data-f="nama" required placeholder="Contoh: SK Tim Pelaksana Sensus 2026" class="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm bg-slate-50 focus:bg-white focus:ring-2 focus:ring-orange-500/30 focus:border-orange-500 outline-none transition"></div>
+          <div class="grid grid-cols-2 gap-3">
+            <div><label class="block text-sm font-semibold mb-1.5 text-slate-600">Nomor (opsional)</label><input type="text" data-f="nomor" placeholder="No. SK" class="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm bg-slate-50 focus:bg-white focus:ring-2 focus:ring-orange-500/30 focus:border-orange-500 outline-none transition"></div>
+            <div><label class="block text-sm font-semibold mb-1.5 text-slate-600">Tanggal</label><input type="date" data-f="tanggal" required class="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm bg-slate-50 focus:bg-white focus:ring-2 focus:ring-orange-500/30 focus:border-orange-500 outline-none transition"></div>
+          </div>
+          <div><label class="block text-sm font-semibold mb-1.5 text-slate-600">Link File di Google Drive</label><input type="url" data-f="link" required placeholder="https://drive.google.com/file/d/..." class="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm bg-slate-50 focus:bg-white focus:ring-2 focus:ring-orange-500/30 focus:border-orange-500 outline-none transition"></div>
+          <button type="submit" class="bg-orange-600 hover:bg-orange-700 active:bg-orange-800 text-white px-4 py-2.5 rounded-xl font-bold w-full transition shadow-sm shadow-orange-600/20">Simpan Data Arsip SK</button>
+        </form>
+
+        <div class="border-t border-slate-100 pt-4">
+          <div class="overflow-x-auto border rounded-xl">
+            <table class="w-full text-left text-xs text-slate-600">
+              <thead class="bg-slate-50 text-[11px] font-bold uppercase text-slate-500 tracking-wide"><tr><th class="px-3 py-2">Nama File</th><th class="px-3 py-2">Nomor</th><th class="px-3 py-2">Tanggal</th><th class="px-3 py-2">File</th></tr></thead>
+              <tbody id="tbody-arsip-SK" class="divide-y divide-slate-100"><tr><td colspan="4" class="text-center py-4 text-slate-400">Memuat data...</td></tr></tbody>
+            </table>
+          </div>
+        </div>
       </div>
     </div>
 
     <div id="page-arsip-kak" class="page-view hidden space-y-5">
-      <div class="bg-white p-7 rounded-2xl border border-slate-100 shadow-sm max-w-xl mx-auto">
-        <h3 class="font-bold text-orange-600 border-b border-slate-100 pb-3 mb-1 text-base tracking-tight">Arsip KAK</h3>
-        <p class="text-xs text-slate-500 mt-2">Daftar arsip Kerangka Acuan Kerja pendukung anggaran.</p>
+      <div class="bg-white p-7 rounded-2xl border border-slate-100 shadow-sm max-w-xl mx-auto space-y-4">
+        <div class="flex items-center justify-between border-b border-slate-100 pb-3 mb-1">
+          <h3 class="font-bold text-orange-600 text-base tracking-tight">Arsip KAK</h3>
+          <a href="https://drive.google.com/drive/folders/1mBXznCoARoUfULD2r3rz8-aGGu92tXjj" target="_blank" rel="noopener" class="text-xs font-bold text-blue-600 hover:underline flex items-center gap-1"><i data-lucide="external-link" class="w-3.5 h-3.5"></i> Buka Folder Drive</a>
+        </div>
+        <p class="text-xs text-slate-500 -mt-2">Upload file PDF/Word/Excel ke folder Drive di atas terlebih dahulu, lalu catat metadatanya + tempel link file di bawah ini.</p>
+
+        <form onsubmit="handleArsipSubmit(event, 'KAK')" class="space-y-3 text-sm">
+          <div><label class="block text-sm font-semibold mb-1.5 text-slate-600">Nama File / Judul</label><input type="text" data-f="nama" required placeholder="Contoh: KAK Kegiatan Susenas 2026" class="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm bg-slate-50 focus:bg-white focus:ring-2 focus:ring-orange-500/30 focus:border-orange-500 outline-none transition"></div>
+          <div class="grid grid-cols-2 gap-3">
+            <div><label class="block text-sm font-semibold mb-1.5 text-slate-600">Nomor (opsional)</label><input type="text" data-f="nomor" placeholder="No. KAK" class="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm bg-slate-50 focus:bg-white focus:ring-2 focus:ring-orange-500/30 focus:border-orange-500 outline-none transition"></div>
+            <div><label class="block text-sm font-semibold mb-1.5 text-slate-600">Tanggal</label><input type="date" data-f="tanggal" required class="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm bg-slate-50 focus:bg-white focus:ring-2 focus:ring-orange-500/30 focus:border-orange-500 outline-none transition"></div>
+          </div>
+          <div><label class="block text-sm font-semibold mb-1.5 text-slate-600">Link File di Google Drive</label><input type="url" data-f="link" required placeholder="https://drive.google.com/file/d/..." class="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm bg-slate-50 focus:bg-white focus:ring-2 focus:ring-orange-500/30 focus:border-orange-500 outline-none transition"></div>
+          <button type="submit" class="bg-orange-600 hover:bg-orange-700 active:bg-orange-800 text-white px-4 py-2.5 rounded-xl font-bold w-full transition shadow-sm shadow-orange-600/20">Simpan Data Arsip KAK</button>
+        </form>
+
+        <div class="border-t border-slate-100 pt-4">
+          <div class="overflow-x-auto border rounded-xl">
+            <table class="w-full text-left text-xs text-slate-600">
+              <thead class="bg-slate-50 text-[11px] font-bold uppercase text-slate-500 tracking-wide"><tr><th class="px-3 py-2">Nama File</th><th class="px-3 py-2">Nomor</th><th class="px-3 py-2">Tanggal</th><th class="px-3 py-2">File</th></tr></thead>
+              <tbody id="tbody-arsip-KAK" class="divide-y divide-slate-100"><tr><td colspan="4" class="text-center py-4 text-slate-400">Memuat data...</td></tr></tbody>
+            </table>
+          </div>
+        </div>
       </div>
     </div>
 
     <div id="page-arsip-spm" class="page-view hidden space-y-5">
-      <div class="bg-white p-7 rounded-2xl border border-slate-100 shadow-sm max-w-xl mx-auto">
-        <h3 class="font-bold text-orange-600 border-b border-slate-100 pb-3 mb-1 text-base tracking-tight">Arsip SPM</h3>
-        <p class="text-xs text-slate-500 mt-2">Daftar arsip Surat Perintah Membayar yang telah dicairkan.</p>
+      <div class="bg-white p-7 rounded-2xl border border-slate-100 shadow-sm max-w-xl mx-auto space-y-4">
+        <div class="flex items-center justify-between border-b border-slate-100 pb-3 mb-1">
+          <h3 class="font-bold text-orange-600 text-base tracking-tight">Arsip SPM</h3>
+          <a href="https://drive.google.com/drive/folders/1NfYG18sgPygFqT8i6Sjez2rRnATXoEMh" target="_blank" rel="noopener" class="text-xs font-bold text-blue-600 hover:underline flex items-center gap-1"><i data-lucide="external-link" class="w-3.5 h-3.5"></i> Buka Folder Drive</a>
+        </div>
+        <p class="text-xs text-slate-500 -mt-2">Upload file PDF/Word/Excel ke folder Drive di atas terlebih dahulu, lalu catat metadatanya + tempel link file di bawah ini.</p>
+
+        <form onsubmit="handleArsipSubmit(event, 'SPM')" class="space-y-3 text-sm">
+          <div><label class="block text-sm font-semibold mb-1.5 text-slate-600">Nama File / Judul</label><input type="text" data-f="nama" required placeholder="Contoh: SPM Belanja Gaji September 2026" class="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm bg-slate-50 focus:bg-white focus:ring-2 focus:ring-orange-500/30 focus:border-orange-500 outline-none transition"></div>
+          <div class="grid grid-cols-2 gap-3">
+            <div><label class="block text-sm font-semibold mb-1.5 text-slate-600">Nomor (opsional)</label><input type="text" data-f="nomor" placeholder="No. SPM" class="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm bg-slate-50 focus:bg-white focus:ring-2 focus:ring-orange-500/30 focus:border-orange-500 outline-none transition"></div>
+            <div><label class="block text-sm font-semibold mb-1.5 text-slate-600">Tanggal</label><input type="date" data-f="tanggal" required class="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm bg-slate-50 focus:bg-white focus:ring-2 focus:ring-orange-500/30 focus:border-orange-500 outline-none transition"></div>
+          </div>
+          <div><label class="block text-sm font-semibold mb-1.5 text-slate-600">Link File di Google Drive</label><input type="url" data-f="link" required placeholder="https://drive.google.com/file/d/..." class="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm bg-slate-50 focus:bg-white focus:ring-2 focus:ring-orange-500/30 focus:border-orange-500 outline-none transition"></div>
+          <button type="submit" class="bg-orange-600 hover:bg-orange-700 active:bg-orange-800 text-white px-4 py-2.5 rounded-xl font-bold w-full transition shadow-sm shadow-orange-600/20">Simpan Data Arsip SPM</button>
+        </form>
+
+        <div class="border-t border-slate-100 pt-4">
+          <div class="overflow-x-auto border rounded-xl">
+            <table class="w-full text-left text-xs text-slate-600">
+              <thead class="bg-slate-50 text-[11px] font-bold uppercase text-slate-500 tracking-wide"><tr><th class="px-3 py-2">Nama File</th><th class="px-3 py-2">Nomor</th><th class="px-3 py-2">Tanggal</th><th class="px-3 py-2">File</th></tr></thead>
+              <tbody id="tbody-arsip-SPM" class="divide-y divide-slate-100"><tr><td colspan="4" class="text-center py-4 text-slate-400">Memuat data...</td></tr></tbody>
+            </table>
+          </div>
+        </div>
       </div>
     </div>
 
