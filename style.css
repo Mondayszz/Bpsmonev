@@ -207,3 +207,47 @@ select:disabled { cursor: not-allowed; opacity: .6; }
 .submenu-panel > div { overflow: hidden; }
 .submenu-panel button { transition: transform .15s ease, color .15s ease; }
 .submenu-panel button:hover { transform: translateX(3px); }
+
+/* ==========================================
+   PROFIL KANAN ATAS (klik -> menu Operator)
+   ========================================== */
+.profile-btn { transition: background .18s ease, box-shadow .18s ease; }
+.profile-btn.profile-clickable:hover { background: #eef2f9; box-shadow: 0 0 0 1px #d0dbee; }
+.profile-btn:active { transform: none; }
+
+/* ==========================================
+   REKAM SPBY: TABEL LANDSCAPE (edit langsung)
+   ========================================== */
+.spby-scroll { overflow: auto; max-height: 68vh; border: 1px solid #e2e8f0; border-radius: .9rem; }
+.spby-table { border-collapse: separate; border-spacing: 0; min-width: 2900px; width: 100%; }
+.spby-th { position: sticky; top: 0; z-index: 2; background: #1e3a5f; color: #fff; font-size: .68rem; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; padding: .6rem .5rem; border-right: 1px solid rgba(255,255,255,.14); white-space: normal; text-align: left; vertical-align: middle; }
+.spby-th.text-center { text-align: center; }
+.spby-td { padding: .2rem .25rem; border-bottom: 1px solid #edf1f6; border-right: 1px solid #f3f5f9; vertical-align: middle; }
+.spby-table tbody tr:nth-child(even) td { background: #fafbfd; }
+.spby-table tbody tr:hover td { background: #eef2f9; }
+.spby-in { width: 100%; background: transparent; border: 1px solid transparent; border-radius: .5rem; padding: .4rem .5rem; font-size: .75rem; color: #1e293b; outline: none; transition: border-color .15s ease, background .15s ease, box-shadow .15s ease; }
+.spby-in:hover { border-color: #d5dde9; }
+.spby-in:focus { background: #fff; border-color: #1e3a8a; box-shadow: 0 0 0 3px rgba(30,58,138,.12); }
+.spby-chk { width: 1.05rem; height: 1.05rem; accent-color: #1e3a8a; cursor: pointer; }
+.spby-del { color: #94a3b8; padding: .35rem; border-radius: .5rem; }
+.spby-del:hover { color: #dc2626; background: #fef2f2; }
+.spby-foot { position: sticky; bottom: 0; background: #f1f5f9; font-size: .75rem; font-weight: 700; color: #1e293b; padding: .55rem .6rem; border-top: 2px solid #cbd5e1; }
+
+/* Cetak landscape (tombol "Cetak Landscape" di Rekam SPBY) */
+@page { size: A4 landscape; margin: 8mm; }
+@media print {
+  body.printing-spby { display: block !important; background: #fff !important; }
+  body.printing-spby aside,
+  body.printing-spby .app-header,
+  body.printing-spby #toast-root,
+  body.printing-spby .no-print { display: none !important; }
+  body.printing-spby main { padding: 0 !important; overflow: visible !important; }
+  body.printing-spby main > .page-view:not(#page-rekam-spby) { display: none !important; }
+  body.printing-spby #page-rekam-spby > div { border: 0 !important; box-shadow: none !important; padding: 0 !important; }
+  body.printing-spby .spby-scroll { max-height: none !important; overflow: visible !important; border: 0; }
+  body.printing-spby .spby-table { min-width: 0 !important; font-size: 6.5pt; }
+  body.printing-spby .spby-th { position: static; background: #1e3a5f !important; color: #fff !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; padding: 3px; }
+  body.printing-spby .spby-foot { position: static; }
+  body.printing-spby .spby-in { padding: 1px 2px; font-size: 6.5pt; border: 0; }
+  body.printing-spby .spby-in::-webkit-calendar-picker-indicator { display: none; }
+}

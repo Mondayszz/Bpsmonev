@@ -104,6 +104,7 @@ function startSubscriptions(roles) {
   subscribeRealtimeData();
   subscribeRekamSPBY();
   subscribeLembur();
+  subscribePengajuanLembur();
   subscribeBelanjaUP();
   ['SK', 'KAK', 'SPM'].forEach(loadArsipList);
   if (roles.includes('Operator') || roles.includes('Super Admin')) subscribeUsersRealtime();
@@ -168,7 +169,8 @@ function openDokImage(containerId, i) {
 }
 
 function renderDokumentasiLembur() {
-  renderDokGrid('dok-grid-lembur', listLaporanLembur, d => d.foto, d => `${d.nama || '-'} · ${d.tgl || '-'}`, d => d.output || '');
+  renderDokGrid('dok-grid-lembur', listLaporanLembur, d => d.foto, d => `${d.nama || '-'} · ${d.tgl || '-'}`,
+    d => (d.jamLembur ? `${d.jamLembur} jam (${d.jenisHari || '-'}) — ` : '') + (d.output || ''));
 }
 
 function renderDokumentasiBelanja() {
@@ -183,7 +185,7 @@ function exportAllToExcel() {
   add('SPBY', spbyRows.map(({ createdAt, ...r }) => r));
   add('Lembur', listLaporanLembur.map(({ id, foto, createdAt, ...r }) => r));
   add('Belanja UP', listBelanjaUP.map(({ id, bukti, createdAt, ...r }) => r));
-  XLSX.writeFile(wb, 'MONEV_BPS_Export.xlsx');
+  XLSX.writeFile(wb, 'KIBATA_Export.xlsx');
 }
 
 // ==========================================================================
@@ -215,7 +217,20 @@ function populatePegawaiDropdowns() {
   }
 }
 
+let currentRoles = [];
+function hasPageAccess(pageId, roles) {
+  const required = PAGE_ROLES[pageId];
+  return !required || roles.includes('Operator') || roles.includes('Super Admin') || required.some(r => roles.includes(r));
+}
+
+// Klik profil di kanan atas -> menu Operator (hanya Operator / Super Admin)
+function openOperatorMenu() {
+  if (!hasPageAccess('page-operator', currentRoles)) return;
+  navigateTo('page-operator');
+}
+
 function navigateTo(pageId) {
+  if (!hasPageAccess(pageId, currentRoles)) { toast('Anda tidak memiliki akses ke halaman ini.', 'warn'); return; }
   document.querySelectorAll('.page-view').forEach(p => p.classList.add('hidden'));
   document.querySelectorAll('[data-page]').forEach(b => b.classList.toggle('nav-active', b.getAttribute('data-page') === pageId));
   const target = document.getElementById(pageId);
@@ -278,7 +293,96 @@ function subscribeRealtimeData() {
     populateBerkasDropdown('operator-select-berkas', listBerkas.filter(b => b.statusPosisi === 'PPSPM'));
     populateBerkasDropdown('bendahara-select-berkas', listBerkas.filter(b => b.statusPosisi === 'Operator'));
     renderOperatorInbox();
+    renderArsiparisTable();
   }, err => console.error('Gagal memuat berkas_keuangan:', err));
+}
+
+// ==========================================================================
+// INPUT MEMO: ARSIPARIS (setelah Bendahara simpan pencairan -> tahap arsip akhir)
+// ==========================================================================
+let arsiparisTab = 'siap';
+
+function switchArsiparisTab(tab) {
+  arsiparisTab = tab;
+  const map = { siap: 'btn-arsiparis-siap', selesai: 'btn-arsiparis-selesai' };
+  Object.entries(map).forEach(([k, id]) => {
+    const b = document.getElementById(id);
+    if (!b) return;
+    if (k === tab) { b.className = b.className.replace('bg-slate-100 text-slate-600 hover:bg-blue-50 hover:text-blue-800', 'bg-blue-800 text-white'); }
+    else { b.className = b.className.replace('bg-blue-800 text-white', 'bg-slate-100 text-slate-600 hover:bg-blue-50 hover:text-blue-800'); }
+  });
+  renderArsiparisTable();
+}
+
+function renderArsiparisTable() {
+  const tbody = document.getElementById('tbody-arsiparis');
+  if (!tbody) return; // halaman belum aktif, skip render
+
+  const siap = listBerkas.filter(b => b.statusPosisi === 'Bendahara');
+  const selesai = listBerkas.filter(b => b.statusPosisi === 'Arsip');
+  const cSiap = document.getElementById('arsiparis-count-siap');
+  const cSelesai = document.getElementById('arsiparis-count-selesai');
+  if (cSiap) cSiap.textContent = siap.length;
+  if (cSelesai) cSelesai.textContent = selesai.length;
+
+  const rows = arsiparisTab === 'siap' ? siap : selesai;
+  if (!rows.length) {
+    tbody.innerHTML = `<tr><td colspan="10" class="text-center py-6 text-slate-400">${arsiparisTab === 'siap' ? 'Belum ada berkas yang siap diarsipkan.' : 'Belum ada berkas yang sudah diarsipkan.'}</td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = rows.map((b, i) => {
+    if (arsiparisTab === 'siap') {
+      return `
+        <tr>
+          <td class="spby-td text-center">${i + 1}</td>
+          <td class="spby-td font-mono">${esc(b.smNoMemo || '-')}</td>
+          <td class="spby-td">${esc(b.smUraian || '-')}</td>
+          <td class="spby-td">${esc(b.smPembuat || '-')}</td>
+          <td class="spby-td">${esc(b.bendaharaTglSp2d || '-')}</td>
+          <td class="spby-td">${esc(b.bendaharaTglTransfer || '-')}</td>
+          <td class="spby-td"><input type="date" id="arsiparis-tgl-${b.id}" class="spby-in"></td>
+          <td class="spby-td"><input type="text" id="arsiparis-ket-${b.id}" placeholder="Keterangan / lokasi arsip" class="spby-in"></td>
+          <td class="spby-td text-center">${statusBadge('Siap Diarsipkan')}</td>
+          <td class="spby-td text-center no-print"><button type="button" onclick="handleArsipkanBerkas('${b.id}')" class="bg-blue-800 hover:bg-blue-900 text-white text-[11px] px-3 py-1.5 rounded-lg font-bold transition">Arsipkan</button></td>
+        </tr>`;
+    }
+    return `
+      <tr>
+        <td class="spby-td text-center">${i + 1}</td>
+        <td class="spby-td font-mono">${esc(b.smNoMemo || '-')}</td>
+        <td class="spby-td">${esc(b.smUraian || '-')}</td>
+        <td class="spby-td">${esc(b.smPembuat || '-')}</td>
+        <td class="spby-td">${esc(b.bendaharaTglSp2d || '-')}</td>
+        <td class="spby-td">${esc(b.bendaharaTglTransfer || '-')}</td>
+        <td class="spby-td">${esc(b.arsipTglArsip || '-')}</td>
+        <td class="spby-td">${esc(b.arsipKeterangan || '-')}</td>
+        <td class="spby-td text-center">${statusBadge('Sudah Diarsipkan')}</td>
+        <td class="spby-td text-center no-print text-slate-300"><i data-lucide="check-circle-2" class="w-4 h-4 inline text-blue-700"></i></td>
+      </tr>`;
+  }).join('');
+  if (window.lucide) lucide.createIcons();
+}
+
+async function handleArsipkanBerkas(id) {
+  const tglEl = document.getElementById(`arsiparis-tgl-${id}`);
+  const ketEl = document.getElementById(`arsiparis-ket-${id}`);
+  const tgl = tglEl ? tglEl.value : '';
+  const ket = ketEl ? ketEl.value.trim() : '';
+  if (!tgl) { toast('Isi Tanggal Arsip terlebih dahulu.', 'warn'); if (tglEl) tglEl.focus(); return; }
+
+  try {
+    await db.collection('berkas_keuangan').doc(id).update({
+      arsipTglArsip: tgl,
+      arsipKeterangan: ket,
+      arsipPembuat: currentUserData ? (currentUserData.nama || '') : '',
+      statusPosisi: 'Arsip'
+    });
+    toast('Berkas berhasil diarsipkan.', 'success');
+  } catch (err) {
+    console.error(err);
+    toast('Gagal mengarsipkan berkas. (' + (err.message || '') + ')', 'error');
+  }
 }
 
 // Box "menunggu approval" di halaman Operator: nampilin berkas yang statusnya 'PPSPM'
@@ -343,7 +447,7 @@ firebase.auth().onAuthStateChanged(async (user) => {
     currentUserData = snap.data();
 
     if (currentUserData.status === "nonaktif") {
-      alert("Akun Anda telah dinonaktifkan oleh Admin. Hubungi Operator MONEV.");
+      alert("Akun Anda telah dinonaktifkan oleh Admin. Hubungi Operator KIBATA.");
       await new Promise(r => setTimeout(r, 2500));
       await firebase.auth().signOut();
       window.location.href = "index.html";
@@ -430,8 +534,8 @@ function statusBadge(label) {
   const low = s.toLowerCase();
   let cls = 'status-neutral';
   if (/tolak|reject|gagal|batal/.test(low)) cls = 'status-rejected';
-  else if (/setuju|selesai|approved|berhasil|lunas|diterima/.test(low)) cls = 'status-done';
-  else if (/tunggu|pending|proses|menunggu|diajukan|kembali/.test(low)) cls = 'status-pending';
+  else if (/setuju|selesai|approved|berhasil|lunas|diterima|^sudah/.test(low)) cls = 'status-done';
+  else if (/tunggu|pending|proses|menunggu|diajukan|kembali|^belum|^siap/.test(low)) cls = 'status-pending';
   return `<span class="status-badge ${cls}">${esc(s || '-')}</span>`;
 }
 
@@ -447,6 +551,7 @@ const PAGE_ROLES = {
   'page-ppspm': ['PPSPM', 'Operator', 'Super Admin'],
   'page-operator': ['Operator', 'Super Admin'],
   'page-bendahara': ['Bendahara', 'Operator', 'Super Admin'],
+  'page-arsiparis': ['Arsiparis', 'Bendahara', 'Operator', 'Super Admin'],
   'page-pengajuan-lembur': null,
   'page-laporan-lembur': null,
   'page-rekam-spby': ['Bendahara', 'Operator', 'Super Admin'],
@@ -457,7 +562,7 @@ const PAGE_ROLES = {
 };
 
 const PAGE_TITLES = {
-  'page-beranda': 'Selamat Datang di Sistem MONEV BPS',
+  'page-beranda': 'Selamat Datang di KIBATA',
   'page-dashboard-all': 'Dashboard Monitoring Input',
   'page-dokumentasi': 'Dokumentasi Kegiatan',
   'page-sm': 'Input Memo: Subject Matter',
@@ -465,6 +570,7 @@ const PAGE_TITLES = {
   'page-ppspm': 'Input Memo: PPSPM',
   'page-operator': 'Kelola Akun Karyawan',
   'page-bendahara': 'Input Memo: Bendahara',
+  'page-arsiparis': 'Input Memo: Arsiparis',
   'page-pengajuan-lembur': 'Pengajuan Lembur',
   'page-laporan-lembur': 'Laporan Lembur',
   'page-rekam-spby': 'Rekam SPBY Bendahara',
@@ -475,7 +581,18 @@ const PAGE_TITLES = {
 };
 
 function applyRolePermissions(roles) {
+  currentRoles = roles;
   const isFullAccess = roles.includes('Operator') || roles.includes('Super Admin');
+
+  // profil kanan atas: hanya Operator/Super Admin yang bisa diklik
+  const pBtn = document.getElementById('btn-profile-menu');
+  if (pBtn) {
+    pBtn.classList.toggle('cursor-default', !isFullAccess);
+    pBtn.classList.toggle('cursor-pointer', isFullAccess);
+    pBtn.classList.toggle('profile-clickable', isFullAccess);
+    pBtn.title = isFullAccess ? 'Buka Menu Operator' : '';
+  }
+  document.getElementById('profile-operator-badge')?.classList.toggle('hidden', !isFullAccess);
 
   document.querySelectorAll('[data-page]').forEach(btn => {
     const pageId = btn.getAttribute('data-page');
@@ -493,7 +610,7 @@ function applyRolePermissions(roles) {
   const activePage = document.querySelector('.page-view:not(.hidden)');
   if (activePage) {
     const btnForActive = document.querySelector(`[data-page="${activePage.id}"]`);
-    if (btnForActive && btnForActive.classList.contains('hidden')) {
+    if (!hasPageAccess(activePage.id, roles) || (btnForActive && btnForActive.classList.contains('hidden'))) {
       navigateTo('page-beranda');
     }
   }
@@ -677,11 +794,14 @@ function subscribeUsersRealtime() {
 // ==========================================================================
 // INPUT MEMO: SUBJECT MATTER -> PPK -> PPSPM -> BENDAHARA
 // ==========================================================================
+const SM_MEMO_PREFIX = `FP-${TAHUN_ANGGARAN}-682317-92800-`;
+
 async function handleSMSubmit(e) {
   e.preventDefault();
-  const noMemoEl = document.getElementById('sm-no-memo');
+  const noMemoEl = document.getElementById('sm-no-memo-suffix');
   const pembuat = document.getElementById('sm-pembuat').value;
-  const noMemo = noMemoEl.value.trim();
+  const suffix = noMemoEl.value.trim();
+  const noMemo = suffix ? SM_MEMO_PREFIX + suffix : '';
   const uraian = document.getElementById('sm-uraian').value.trim();
   const tglPenyerahan = document.getElementById('sm-tgl-penyerahan').value;
   const errEl = document.getElementById('sm-no-memo-error');
@@ -689,20 +809,21 @@ async function handleSMSubmit(e) {
 
   if (errEl) errEl.classList.add('hidden');
   if (!pembuat) { alert('Pilih nama pembuat terlebih dahulu.'); return; }
-  if (!noMemo) { alert('Nomor memo tidak boleh kosong.'); noMemoEl.focus(); return; }
+  if (!suffix) { alert('Nomor urut memo tidak boleh kosong.'); noMemoEl.focus(); return; }
 
   btn.disabled = true;
   btn.innerText = 'Mengecek nomor memo...';
 
   try {
+    const wrapEl = document.getElementById('sm-no-memo-wrap');
     const dup = await db.collection('berkas_keuangan').where('smNoMemo', '==', noMemo).limit(1).get();
     if (!dup.empty) {
       if (errEl) errEl.classList.remove('hidden');
-      noMemoEl.classList.add('border-red-400');
+      if (wrapEl) wrapEl.classList.add('ring-2', 'ring-red-400', 'border-red-400');
       noMemoEl.focus();
       return;
     }
-    noMemoEl.classList.remove('border-red-400');
+    if (wrapEl) wrapEl.classList.remove('ring-2', 'ring-red-400', 'border-red-400');
 
     btn.innerText = 'Menyimpan...';
     await db.collection('berkas_keuangan').add({
@@ -832,9 +953,9 @@ async function handleBendaharaSubmit(e) {
       bendaharaPembuat: pembuat,
       bendaharaTglSp2d: tglSp2d,
       bendaharaTglTransfer: tglTransfer,
-      statusPosisi: 'Selesai'
+      statusPosisi: 'Bendahara'
     });
-    alert('Pencairan Bendahara berhasil disimpan. Berkas selesai diproses.');
+    alert('Pencairan Bendahara berhasil disimpan. Berkas diteruskan ke Arsiparis.');
     e.target.reset();
   } catch (err) {
     console.error(err);
@@ -851,6 +972,7 @@ async function handleBendaharaSubmit(e) {
 async function handlePengajuanLemburSubmit(e) {
   e.preventDefault();
   const ketua = document.getElementById('lembur-ketua').value;
+  const perihal = document.getElementById('lembur-perihal').value.trim();
   const tglPengajuan = document.getElementById('lembur-tgl-pengajuan').value;
   const tglMulai = document.getElementById('lembur-tgl-mulai').value;
   const durasiHari = parseFloat(document.getElementById('lembur-durasi').value);
@@ -858,13 +980,14 @@ async function handlePengajuanLemburSubmit(e) {
   const btn = e.target.querySelector('button[type="submit"]');
 
   if (!ketua) { alert('Pilih nama ketua tim.'); return; }
+  if (!perihal) { alert('Isi perihal lembur.'); return; }
   if (!durasiHari || durasiHari <= 0) { alert('Isi durasi lembur (hari) dengan benar.'); return; }
 
   btn.disabled = true;
   btn.innerText = 'Menyimpan...';
   try {
     await db.collection('pengajuan_lembur').add({
-      ketua, tglPengajuan, tglMulai, durasiHari, peserta,
+      ketua, perihal, tglPengajuan, tglMulai, durasiHari, peserta,
       createdAt: firebase.firestore.FieldValue.serverTimestamp()
     });
     alert('Pengajuan lembur berhasil disimpan.');
@@ -878,17 +1001,49 @@ async function handlePengajuanLemburSubmit(e) {
   }
 }
 
+// Batas jam lembur: HK (Hari Kerja) maks 4 jam, HL (Hari Libur) maks 8 jam
+const JAM_LEMBUR_MAX = { HK: 4, HL: 8 };
+const JAM_LEMBUR_LABEL = { HK: 'Hari Kerja (HK)', HL: 'Hari Libur (HL)' };
+
+function validateJamLembur() {
+  const jenisEl = document.getElementById('lap-jenis-hari');
+  const jamEl = document.getElementById('lap-jam');
+  const warnEl = document.getElementById('lap-jam-warning');
+  if (!jenisEl || !jamEl || !warnEl) return true;
+
+  const jenis = jenisEl.value;
+  const max = JAM_LEMBUR_MAX[jenis] || 4;
+  const jam = parseFloat(jamEl.value);
+
+  if (jam && jam > max) {
+    jamEl.value = max;
+    warnEl.querySelector('span').textContent = `Jam lembur melebihi batas maksimal untuk ${JAM_LEMBUR_LABEL[jenis]}. Otomatis disesuaikan ke maksimal ${max} jam.`;
+    warnEl.classList.remove('hidden');
+    if (window.lucide) lucide.createIcons();
+    return false;
+  }
+  warnEl.classList.add('hidden');
+  return true;
+}
+
 async function handleLaporanLemburFirebase(e) {
   e.preventDefault();
   const nama = document.getElementById('lap-nama').value;
   const tgl = document.getElementById('lap-tgl').value;
-  const durasiHari = parseFloat(document.getElementById('lap-durasi').value);
+  const jenisHari = document.getElementById('lap-jenis-hari').value;
+  const jamLembur = parseFloat(document.getElementById('lap-jam').value);
   const output = document.getElementById('lap-output').value.trim();
   const fotoFile = document.getElementById('lap-foto').files[0];
   const btn = document.getElementById('btn-submit-lembur');
 
   if (!nama) { alert('Pilih nama peserta.'); return; }
-  if (!durasiHari || durasiHari <= 0) { alert('Isi durasi lembur (hari) dengan benar.'); return; }
+  if (!jamLembur || jamLembur <= 0) { alert('Isi jam lembur dengan benar.'); return; }
+  const max = JAM_LEMBUR_MAX[jenisHari] || 4;
+  if (jamLembur > max) {
+    alert(`Jam lembur melebihi batas maksimal ${max} jam untuk ${JAM_LEMBUR_LABEL[jenisHari]}. Silakan sesuaikan jam lembur.`);
+    validateJamLembur();
+    return;
+  }
 
   btn.disabled = true;
   btn.innerText = 'Memproses foto...';
@@ -900,11 +1055,12 @@ async function handleLaporanLemburFirebase(e) {
 
     btn.innerText = 'Menyimpan...';
     await db.collection('laporan_lembur').add({
-      nama, tgl, durasiHari, output, foto: fotoBase64,
+      nama, tgl, jenisHari, jamLembur, output, foto: fotoBase64,
       createdAt: firebase.firestore.FieldValue.serverTimestamp()
     });
     alert('Laporan lembur berhasil disimpan.');
     e.target.reset();
+    document.getElementById('lap-jam-warning')?.classList.add('hidden');
   } catch (err) {
     console.error(err);
     alert('Gagal menyimpan laporan lembur. (' + (err.message || '') + ')');
@@ -984,135 +1140,344 @@ async function handleUPFirebase(e) {
 }
 
 // ==========================================================================
-// REKAM SPBY: UPLOAD EXCEL (DETEKSI HEADER FLEKSIBEL & UPDATE REALTIME CHART)
+// REKAM SPBY: TABEL LANDSCAPE, EDIT LANGSUNG (SIMPAN OTOMATIS KE FIRESTORE)
+// Koleksi 'rekam_spby'. Field tanggal / uraian / nominal tetap dipakai
+// untuk metrik & grafik di Beranda.
 // ==========================================================================
 function ymd(y, m, d) { return `${y}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`; }
 
-function parseTanggal(v) {
-  if (v instanceof Date) return ymd(v.getFullYear(), v.getMonth() + 1, v.getDate());
-  if (typeof v === 'number' && v > 20000) {
-    const p = XLSX.SSF.parse_date_code(v);
-    return p ? ymd(p.y, p.m, p.d) : '';
-  }
-  const s = String(v ?? '').trim();
-  let m = s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/);
-  if (m) return ymd(+m[1], +m[2], +m[3]);
-  m = s.match(/^(\d{1,2})[\/.\-](\d{1,2})[\/.\-](\d{2,4})/);
-  if (m) return ymd(m[3].length === 2 ? 2000 + +m[3] : +m[3], +m[2], +m[1]);
-  return '';
-}
-
-// Mendukung 1500000 | 1.500.000 | 1.500.000,50 | 1,500,000.50 | "Rp 1.500.000"
-function parseNominal(v) {
-  if (typeof v === 'number') return isFinite(v) ? v : 0;
-  let s = String(v ?? '').replace(/[^0-9.,-]/g, '');
-  if (!s) return 0;
-  const ld = s.lastIndexOf('.'), lc = s.lastIndexOf(',');
-  if (ld > -1 && lc > -1) s = lc > ld ? s.replace(/\./g, '').replace(',', '.') : s.replace(/,/g, '');
-  else if (lc > -1) s = /,\d{1,2}$/.test(s) ? s.replace(',', '.') : s.replace(/,/g, '');
-  else if (ld > -1 && !(/\.\d{1,2}$/.test(s) && (s.match(/\./g) || []).length === 1)) s = s.replace(/\./g, '');
-  return parseFloat(s) || 0;
-}
-
-function findSPBYHeader(rows) {
-  for (let i = 0; i < Math.min(rows.length, 20); i++) {
-    const r = rows[i].map(c => String(c).toLowerCase().trim());
-    const t = r.findIndex(c => c.includes('tanggal') || /^tgl/.test(c));
-    const u = r.findIndex(c => /uraian|keterangan|rincian|deskripsi/.test(c));
-    const n = r.findIndex(c => /nominal|jumlah|nilai|kredit|debet|^rp\b/.test(c));
-    if (t > -1 && u > -1 && n > -1) return { headerIndex: i, t, u, n };
-  }
-  return null;
-}
-
-function hashId(str) {
-  let h1 = 5381, h2 = 52711;
-  for (let i = 0; i < str.length; i++) { const c = str.charCodeAt(i); h1 = (h1 * 33) ^ c; h2 = (h2 * 31) ^ c; }
-  return (h1 >>> 0).toString(36) + (h2 >>> 0).toString(36);
-}
-
-function handleUploadSPBYExcel() {
-  const fileInput = document.getElementById('spby-excel-file');
-  const statusEl = document.getElementById('spby-upload-status');
-  const btn = document.getElementById('btn-upload-spby');
-  const file = fileInput.files[0];
-
-  if (!file) { alert('Pilih file Excel terlebih dahulu.'); return; }
-  if (typeof XLSX === 'undefined') { alert('Library pembaca Excel belum termuat, coba refresh halaman.'); return; }
-  if (!firebase.auth().currentUser) { alert('Sesi login habis, silakan login ulang.'); return; }
-
-  btn.disabled = true;
-  btn.innerText = 'Memproses...';
-  statusEl.textContent = '';
-  statusEl.className = 'text-xs font-medium';
-
-  const reader = new FileReader();
-  reader.onerror = () => { statusEl.textContent = 'Gagal membaca file.'; statusEl.classList.add('text-red-600'); btn.disabled = false; btn.innerText = 'Proses & Simpan Data Excel'; };
-  reader.onload = async (evt) => {
-    try {
-      const wb = XLSX.read(new Uint8Array(evt.target.result), { type: 'array' });
-
-      // baca SEMUA sheet (Januari, Februari, Februari KKP1, dst.)
-      const BULAN_ID = ['januari','februari','maret','april','mei','juni','juli','agustus','september','oktober','november','desember'];
-      const docsMap = new Map();
-      const info = [];
-      let skipped = 0, sheetOk = 0;
-
-      for (const name of wb.SheetNames) {
-        const rows = XLSX.utils.sheet_to_json(wb.Sheets[name], { header: 1, defval: '' });
-        const hdr = findSPBYHeader(rows);
-        if (!hdr) { info.push(`${name} (tanpa header, dilewati)`); continue; }
-        sheetOk++;
-        const bulanIdx = BULAN_ID.findIndex(b => name.toLowerCase().includes(b));
-        const seen = {};
-        let n = 0;
-        for (let i = hdr.headerIndex + 1; i < rows.length; i++) {
-          const row = rows[i];
-          if (!row || !row.length) continue;
-          const uraian = String(row[hdr.u] ?? '').trim();
-          const nominal = parseNominal(row[hdr.n]);
-          if (!uraian || nominal === 0 || /^(sub\s*)?(total|jumlah)\b/i.test(uraian)) { skipped++; continue; }
-          const tanggal = normalizeTanggal(parseTanggal(row[hdr.t]), bulanIdx);
-          // ID deterministik: upload ulang / baris sama antar sheet tidak digandakan
-          const key = `${tanggal}|${uraian}|${nominal}`;
-          seen[key] = (seen[key] || 0) + 1;
-          const id = hashId(key + '#' + seen[key]);
-          if (!docsMap.has(id)) { docsMap.set(id, { tanggal, uraian, nominal, sheet: name }); n++; }
-        }
-        info.push(`${name}: ${n}`);
-      }
-      const docs = [...docsMap].map(([id, data]) => ({ id, data }));
-      console.log('Ringkasan sheet SPBY:', info);
-      if (!docs.length) throw new Error('Tidak ada baris valid. Pastikan tiap sheet punya kolom Tanggal, Uraian, dan Nominal.');
-
-      // batas Firestore 500 operasi/batch -> dipecah 400
-      for (let i = 0; i < docs.length; i += 400) {
-        const batch = db.batch();
-        docs.slice(i, i + 400).forEach(d => batch.set(db.collection('rekam_spby').doc(d.id), {
-          ...d.data,
-          uploadedBy: firebase.auth().currentUser.uid,
-          createdAt: firebase.firestore.FieldValue.serverTimestamp()
-        }, { merge: true }));
-        await batch.commit();
-      }
-      statusEl.textContent = `Berhasil menyimpan ${docs.length} baris dari ${sheetOk} sheet (${skipped} baris dilewati). ` + info.join(' | ');
-      statusEl.classList.add('text-emerald-600');
-      fileInput.value = '';
-    } catch (err) {
-      console.error(err);
-      statusEl.textContent = err.code === 'permission-denied'
-        ? 'Ditolak Firestore rules: akun ini belum punya role Bendahara/Operator/Super Admin.'
-        : 'Gagal memproses file: ' + err.message;
-      statusEl.classList.add('text-red-600');
-    } finally {
-      btn.disabled = false;
-      btn.innerText = 'Proses & Simpan Data Excel';
-    }
-  };
-  reader.readAsArrayBuffer(file);
-}
-
 const BULAN_PANJANG = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
+let spbyDirty = false;
+let spbyFilterSpm = ''; // '' = semua, '__none__' = tanpa SPM, selain itu = nomor SPM
+
+function getSPBYView() {
+  if (!spbyFilterSpm) return spbyRows;
+  if (spbyFilterSpm === '__none__') return spbyRows.filter(r => !(r.spm || '').trim());
+  return spbyRows.filter(r => (r.spm || '').trim() === spbyFilterSpm);
+}
+
+function refreshSPBYFilterOptions() {
+  const list = [...new Set(spbyRows.map(r => (r.spm || '').trim()).filter(Boolean))]
+    .sort((a, b) => a.localeCompare(b, 'id', { numeric: true }));
+  const hasNone = spbyRows.some(r => !(r.spm || '').trim());
+  if (spbyFilterSpm && spbyFilterSpm !== '__none__' && !list.includes(spbyFilterSpm)) spbyFilterSpm = '';
+  const sel = document.getElementById('spby-filter-spm');
+  if (sel) {
+    const cnt = v => spbyRows.filter(r => (r.spm || '').trim() === v).length;
+    sel.innerHTML = `<option value="">Semua No. SPM (${spbyRows.length})</option>` +
+      list.map(v => `<option value="${esc(v)}">${esc(v)} (${cnt(v)})</option>`).join('') +
+      (hasNone ? `<option value="__none__">Tanpa No. SPM (${spbyRows.filter(r => !(r.spm || '').trim()).length})</option>` : '');
+    sel.value = spbyFilterSpm;
+  }
+  const dl = document.getElementById('spby-spm-list');
+  if (dl) dl.innerHTML = list.map(v => `<option value="${esc(v)}"></option>`).join('');
+}
+
+function setSPBYFilter(v) {
+  spbyFilterSpm = v;
+  renderSPBYTable();
+  updateSPBYFooter();
+}
+
+function spbyText(id, f, val, ph, list) {
+  return `<input type="text" data-id="${id}" data-f="${f}" data-t="text" value="${esc(val)}" ${ph ? `placeholder="${ph}"` : ''} ${list ? `list="${list}"` : ''} class="spby-in">`;
+}
+function spbyNum(id, f, val) {
+  return `<input type="number" min="0" step="any" inputmode="decimal" data-id="${id}" data-f="${f}" data-t="num" value="${val ? Number(val) : ''}" placeholder="0" class="spby-in text-right font-mono">`;
+}
+function spbyDate(id, val) {
+  return `<input type="date" data-id="${id}" data-f="tanggal" data-t="text" value="${esc(val)}" class="spby-in">`;
+}
+// Kolom dokumen (Form Permintaan, dst.) kini isian teks manual; nilai boolean lama ditampilkan sebagai "Ya" / kosong
+function spbyDocVal(v) { return v === true ? 'Ya' : (v === false || v == null ? '' : String(v)); }
+
+function spbyCheck(id, f, val) {
+  return `<input type="checkbox" data-id="${id}" data-f="${f}" data-t="bool" ${val ? 'checked' : ''} class="spby-chk">`;
+}
+
+function renderSPBYTable() {
+  const tbody = document.getElementById('tbody-rekam-spby');
+  if (!tbody) return;
+  spbyDirty = false;
+  const view = getSPBYView();
+  if (!view.length) {
+    tbody.innerHTML = spbyFilterSpm
+      ? '<tr><td colspan="18" class="text-center py-6 text-slate-400">Tidak ada baris untuk filter No. SPM ini.</td></tr>'
+      : '<tr><td colspan="18" class="text-center py-6 text-slate-400">Belum ada data. Klik <b>Tambah Baris</b> untuk mulai mengisi.</td></tr>';
+    return;
+  }
+  tbody.innerHTML = view.map((d, i) => {
+    const id = d.id;
+    return `<tr>
+      <td class="spby-td text-center text-slate-400 font-semibold">${i + 1}</td>
+      <td class="spby-td">${spbyText(id, 'uraian', d.uraian, 'Uraian belanja')}</td>
+      <td class="spby-td text-center">${spbyCheck(id, 'spby', d.spby)}</td>
+      <td class="spby-td">${spbyText(id, 'spm', d.spm, 'No. SPM', 'spby-spm-list')}</td>
+      <td class="spby-td">${spbyNum(id, 'nominal', d.nominal)}</td>
+      <td class="spby-td">${spbyDate(id, d.tanggal)}</td>
+      <td class="spby-td">${spbyText(id, 'penyedia', d.penyedia)}</td>
+      <td class="spby-td">${spbyNum(id, 'pph', d.pph)}</td>
+      <td class="spby-td">${spbyNum(id, 'ppn', d.ppn)}</td>
+      <td class="spby-td">${spbyText(id, 'kode', d.kode)}</td>
+      <td class="spby-td">${spbyText(id, 'uraianAkun', d.uraianAkun)}</td>
+      <td class="spby-td">${spbyText(id, 'npwp', d.npwp)}</td>
+      <td class="spby-td">${spbyText(id, 'formPermintaan', spbyDocVal(d.formPermintaan))}</td>
+      <td class="spby-td">${spbyText(id, 'inputRealisasiBos', spbyDocVal(d.inputRealisasiBos))}</td>
+      <td class="spby-td">${spbyText(id, 'rekapBendaharaBos', spbyDocVal(d.rekapBendaharaBos))}</td>
+      <td class="spby-td">${spbyText(id, 'kak', spbyDocVal(d.kak))}</td>
+      <td class="spby-td">${spbyText(id, 'keterangan', d.keterangan)}</td>
+      <td class="spby-td text-center no-print"><button type="button" data-del="${id}" title="Hapus baris" class="spby-del"><i data-lucide="trash-2" class="w-4 h-4 pointer-events-none"></i></button></td>
+    </tr>`;
+  }).join('');
+  if (window.lucide) lucide.createIcons();
+}
+
+function updateSPBYFooter() {
+  const view = getSPBYView();
+  const sum = f => view.reduce((a, r) => a + Number(r[f] || 0), 0);
+  const set = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
+  set('spby-total-nominal', rupiah(sum('nominal')));
+  set('spby-total-pph', rupiah(sum('pph')));
+  set('spby-total-ppn', rupiah(sum('ppn')));
+  const done = view.filter(r => r.spby).length;
+  const filt = spbyFilterSpm ? ` (dari ${spbyRows.length} baris total)` : '';
+  set('spby-count', `${view.length} baris${filt} · ${done} SPBY tercentang`);
+}
+
+async function saveSPBYField(id, field, value) {
+  const row = spbyRows.find(r => r.id === id);
+  if (row) row[field] = value; // cerminkan ke data lokal agar total langsung terhitung
+  updateSPBYFooter();
+  if (field === 'spm') refreshSPBYFilterOptions();
+  try {
+    await db.collection('rekam_spby').doc(id).set({ [field]: value }, { merge: true });
+  } catch (err) {
+    console.error(err);
+    toast(err.code === 'permission-denied'
+      ? 'Ditolak Firestore rules: hanya Bendahara/Operator/Super Admin yang boleh mengubah data SPBY.'
+      : 'Gagal menyimpan perubahan. (' + err.message + ')', 'error');
+  }
+}
+
+async function addSPBYRow() {
+  const user = firebase.auth().currentUser;
+  if (!user) { toast('Sesi login habis, silakan login ulang.', 'warn'); return; }
+  const now = new Date();
+  const ref = db.collection('rekam_spby').doc();
+  try {
+    await ref.set({
+      uraian: '', nominal: 0, tanggal: ymd(now.getFullYear(), now.getMonth() + 1, now.getDate()),
+      spby: false, spm: (spbyFilterSpm && spbyFilterSpm !== '__none__') ? spbyFilterSpm : '', penyedia: '', pph: 0, ppn: 0, kode: '', uraianAkun: '', npwp: '',
+      formPermintaan: '', inputRealisasiBos: '', rekapBendaharaBos: '', kak: '', keterangan: '',
+      urut: Date.now(), uploadedBy: user.uid,
+      createdAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+    setTimeout(() => {
+      const el = document.querySelector(`#tbody-rekam-spby input[data-id="${ref.id}"][data-f="uraian"]`);
+      if (el) { el.scrollIntoView({ block: 'center' }); el.focus(); }
+    }, 150);
+  } catch (err) {
+    console.error(err);
+    toast(err.code === 'permission-denied'
+      ? 'Ditolak Firestore rules: akun ini belum punya role Bendahara/Operator/Super Admin.'
+      : 'Gagal menambah baris. (' + err.message + ')', 'error');
+  }
+}
+
+async function deleteSPBYRow(id) {
+  if (!await confirmModal('Hapus baris SPBY?', 'Baris ini akan dihapus permanen dan tidak ikut dihitung di Beranda.', 'Ya, hapus')) return;
+  try {
+    await db.collection('rekam_spby').doc(id).delete();
+    toast('Baris SPBY dihapus.', 'success');
+  } catch (err) {
+    toast(err.code === 'permission-denied' ? 'Ditolak: akun ini tidak diizinkan menghapus baris.' : 'Gagal menghapus baris. (' + err.message + ')', 'error');
+  }
+}
+
+// Tombol "Simpan Data": pastikan semua isian (termasuk yang masih diketik) terkirim & terkonfirmasi server
+async function simpanDataSPBY() {
+  const btn = document.getElementById('btn-simpan-spby');
+  const label = btn ? btn.querySelector('span') : null;
+  if (btn) btn.disabled = true;
+  if (label) label.textContent = 'Menyimpan...';
+  try {
+    if (document.activeElement && document.activeElement.blur) document.activeElement.blur(); // memicu simpan isian terakhir
+    await new Promise(r => setTimeout(r, 150));
+    await Promise.race([
+      db.waitForPendingWrites(),
+      new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), 10000))
+    ]);
+    toast(`Data SPBY berhasil disimpan (${spbyRows.length} baris).`, 'success');
+  } catch (err) {
+    toast(err.message === 'timeout'
+      ? 'Penyimpanan belum terkonfirmasi server, periksa koneksi internet lalu coba lagi.'
+      : 'Gagal menyimpan data. (' + err.message + ')', 'error');
+  } finally {
+    if (btn) btn.disabled = false;
+    if (label) label.textContent = 'Simpan Data';
+  }
+}
+
+function printSPBY() {
+  document.body.classList.add('printing-spby');
+  const done = () => { document.body.classList.remove('printing-spby'); window.removeEventListener('afterprint', done); };
+  window.addEventListener('afterprint', done);
+  window.print();
+}
+
+// Delegasi event tabel (dipasang sekali)
+window.addEventListener('DOMContentLoaded', () => {
+  const tbody = document.getElementById('tbody-rekam-spby');
+  if (!tbody) return;
+  tbody.addEventListener('change', e => {
+    const el = e.target.closest('[data-f]');
+    if (!el) return;
+    let v;
+    if (el.dataset.t === 'bool') v = el.checked;
+    else if (el.dataset.t === 'num') v = el.value === '' ? 0 : Number(el.value) || 0;
+    else v = el.value.trim();
+    saveSPBYField(el.dataset.id, el.dataset.f, v);
+  });
+  tbody.addEventListener('click', e => {
+    const b = e.target.closest('[data-del]');
+    if (b) deleteSPBYRow(b.dataset.del);
+  });
+  tbody.addEventListener('focusout', () => {
+    setTimeout(() => { if (spbyDirty && !tbody.contains(document.activeElement)) renderSPBYTable(); }, 50);
+  });
+});
+
+// ==========================================================================
+// EXPORT EXCEL REKAP BULANAN SPBY (pilih bulan -> unduh .xlsx)
+// ==========================================================================
+function spbyRowsByMonth(mi) { // mi: 0-11, atau -1 untuk semua bulan
+  const prefix = mi >= 0 ? `${TAHUN_ANGGARAN}-${String(mi + 1).padStart(2, '0')}` : `${TAHUN_ANGGARAN}-`;
+  return spbyRows.filter(r => (r.tanggal || '').startsWith(prefix))
+    .sort((a, b) => (a.tanggal || '').localeCompare(b.tanggal || '') || (a._urut - b._urut));
+}
+
+// Kelompokkan baris SPBY yang SUDAH diisi No. SPM, per (No. SPM + bulan tanggal nota).
+// Nama file = "{noSPM}_{bulan}_{tahun}" — misal "25_september_2026" — sesuai catatan Bendahara.
+function spbySpmMonthGroups() {
+  const groups = {};
+  spbyRows.forEach(r => {
+    const spm = (r.spm || '').trim();
+    const m = /^(\d{4})-(\d{2})/.exec(r.tanggal || '');
+    if (!spm || !m) return; // lewati baris tanpa No. SPM atau tanpa tanggal nota yang valid
+    const year = +m[1], mi = +m[2] - 1;
+    const key = `${spm}__${year}-${mi}`;
+    if (!groups[key]) groups[key] = { spm, year, mi, rows: [] };
+    groups[key].rows.push(r);
+  });
+  return Object.values(groups).sort((a, b) => (b.year - a.year) || (b.mi - a.mi) ||
+    a.spm.localeCompare(b.spm, 'id', { numeric: true }));
+}
+
+function spbyGroupFileLabel(g) {
+  return `${g.spm}_${BULAN_PANJANG[g.mi].toLowerCase()}_${g.year}`;
+}
+
+function openExportSPBY() {
+  if (typeof XLSX === 'undefined') { toast('Library Excel belum termuat, coba refresh halaman.', 'error'); return; }
+  const groups = spbySpmMonthGroups();
+  const groupOpts = groups.map((g, i) =>
+    `<option value="spm:${i}">${spbyGroupFileLabel(g)}  —  ${g.rows.length} baris (No. SPM ${esc(g.spm)}, ${BULAN_PANJANG[g.mi]} ${g.year})</option>`
+  ).join('');
+
+  const now = new Date();
+  const defMi = now.getFullYear() === TAHUN_ANGGARAN ? now.getMonth() : 0;
+  const monthOpts = BULAN_PANJANG.map((b, i) => `<option value="month:${i}" ${i === defMi ? 'selected' : ''}>${b} ${TAHUN_ANGGARAN} — semua baris (${spbyRowsByMonth(i).length} baris)</option>`).join('');
+
+  openModal(`
+    <h3 class="modal-title">Export Excel SPBY</h3>
+    <p class="modal-text">Pilih file yang mau diunduh. Nama file mengikuti No. SPM &amp; bulan tanggal nota, misalnya <span class="font-mono">25_september_2026</span>. Hanya baris yang sudah diisi No. SPM yang muncul di daftar ini.</p>
+    <select id="export-spby-pilihan" class="w-full mt-4 border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm bg-white focus:ring-2 focus:ring-blue-600/30 focus:border-blue-600 outline-none transition">
+      ${groups.length ? `<optgroup label="Per No. SPM (nama file otomatis)">${groupOpts}</optgroup>` : ''}
+      <optgroup label="Rekap bulanan penuh (semua baris, termasuk tanpa No. SPM)">${monthOpts}
+        <option value="month:-1">Semua bulan ${TAHUN_ANGGARAN} (${spbyRowsByMonth(-1).length} baris)</option>
+      </optgroup>
+    </select>
+    ${!groups.length ? '<p class="text-[11px] text-slate-400 mt-2">Belum ada baris dengan No. SPM terisi, jadi baru tersedia rekap bulanan penuh.</p>' : ''}
+    <div class="flex gap-2 justify-end mt-5">
+      <button data-modal-close class="btn-ghost">Batal</button>
+      <button type="button" onclick="doExportSPBY()" class="bg-blue-800 hover:bg-blue-900 text-white text-xs px-4 py-2 rounded-xl font-bold">Export Excel</button>
+    </div>`);
+}
+
+function buildSPBYSheet(rows, title) {
+  const yn = v => v ? 'Ya' : '-';
+  const sum = (arr, f) => arr.reduce((a, r) => a + Number(r[f] || 0), 0);
+  const head = ['No', 'Uraian', 'SPBY', 'No. SPM', 'Nominal', 'Tanggal', 'Penyedia', 'PPh', 'PPN',
+    'Kode Program/Output/Komponen/Akun', 'Uraian Akun', 'NPWP', 'Form Permintaan', 'Input Realisasi BOS',
+    'Rekap Bendahara BOS', 'KAK', 'Keterangan'];
+  const aoa = [
+    [title],
+    ['BPS Kota Kotamobagu'],
+    [],
+    head,
+    ...rows.map((r, i) => [i + 1, r.uraian || '', yn(r.spby), r.spm || '', Number(r.nominal || 0), r.tanggal || '',
+      r.penyedia || '', Number(r.pph || 0), Number(r.ppn || 0), r.kode || '', r.uraianAkun || '', r.npwp || '',
+      spbyDocVal(r.formPermintaan), spbyDocVal(r.inputRealisasiBos), spbyDocVal(r.rekapBendaharaBos), spbyDocVal(r.kak), r.keterangan || '']),
+    ['', 'TOTAL', '', '', sum(rows, 'nominal'), '', '', sum(rows, 'pph'), sum(rows, 'ppn')]
+  ];
+  const ws = XLSX.utils.aoa_to_sheet(aoa);
+  ws['!merges'] = [{ s: { r: 0, c: 0 }, e: { r: 0, c: head.length - 1 } }, { s: { r: 1, c: 0 }, e: { r: 1, c: head.length - 1 } }];
+  ws['!cols'] = [6, 42, 7, 18, 16, 12, 24, 14, 14, 34, 28, 22, 12, 12, 12, 7, 28].map(wch => ({ wch }));
+  const last = aoa.length - 1;
+  for (let r = 4; r <= last; r++) [4, 7, 8].forEach(c => {
+    const cell = ws[XLSX.utils.encode_cell({ r, c })];
+    if (cell) cell.z = '#,##0';
+  });
+  return ws;
+}
+
+function doExportSPBY() {
+  const val = document.getElementById('export-spby-pilihan').value;
+  const wb = XLSX.utils.book_new();
+
+  if (val.startsWith('spm:')) {
+    // -------- Export per No. SPM + bulan (nama file: {spm}_{bulan}_{tahun}) --------
+    const g = spbySpmMonthGroups()[Number(val.slice(4))];
+    if (!g || !g.rows.length) { toast('Data untuk pilihan ini tidak ditemukan.', 'warn'); return; }
+    const periode = `${BULAN_PANJANG[g.mi]} ${g.year}`;
+    const ws = buildSPBYSheet(g.rows, `SPBY NO. SPM ${g.spm} - ${periode.toUpperCase()}`);
+    XLSX.utils.book_append_sheet(wb, ws, 'Rincian SPBY');
+    const filename = `${spbyGroupFileLabel(g)}.xlsx`;
+    XLSX.writeFile(wb, filename);
+    closeModal();
+    toast(`File ${filename} berhasil diunduh (${g.rows.length} baris).`, 'success');
+    return;
+  }
+
+  // -------- Rekap bulanan penuh (semua baris, cara lama) --------
+  const mi = Number(val.slice(6));
+  const rows = spbyRowsByMonth(mi);
+  if (!rows.length) { toast('Tidak ada data SPBY pada periode yang dipilih.', 'warn'); return; }
+  const periode = mi >= 0 ? `${BULAN_PANJANG[mi]} ${TAHUN_ANGGARAN}` : `Tahun ${TAHUN_ANGGARAN}`;
+  const sum = (arr, f) => arr.reduce((a, r) => a + Number(r[f] || 0), 0);
+  const ws = buildSPBYSheet(rows, `REKAP SPBY BENDAHARA - ${periode.toUpperCase()}`);
+  XLSX.utils.book_append_sheet(wb, ws, 'Rincian SPBY');
+
+  const groups = {};
+  rows.forEach(r => { const k = (r.spm || '').trim() || '(Tanpa No. SPM)'; (groups[k] = groups[k] || []).push(r); });
+  const keys = Object.keys(groups).sort((a, b) => a.localeCompare(b, 'id', { numeric: true }));
+  const aoa2 = [[`REKAP PER NO. SPM - ${periode.toUpperCase()}`], [],
+    ['No', 'No. SPM', 'Jumlah Baris', 'SPBY Tercentang', 'Total Nominal', 'Total PPh', 'Total PPN'],
+    ...keys.map((k, i) => [i + 1, k, groups[k].length, groups[k].filter(r => r.spby).length, sum(groups[k], 'nominal'), sum(groups[k], 'pph'), sum(groups[k], 'ppn')]),
+    ['', 'TOTAL', rows.length, rows.filter(r => r.spby).length, sum(rows, 'nominal'), sum(rows, 'pph'), sum(rows, 'ppn')]
+  ];
+  const ws2 = XLSX.utils.aoa_to_sheet(aoa2);
+  ws2['!cols'] = [6, 26, 14, 16, 18, 16, 16].map(wch => ({ wch }));
+  for (let r = 3; r < aoa2.length; r++) [4, 5, 6].forEach(c => {
+    const cell = ws2[XLSX.utils.encode_cell({ r, c })];
+    if (cell) cell.z = '#,##0';
+  });
+  XLSX.utils.book_append_sheet(wb, ws2, 'Rekap per SPM');
+  const filename = `KIBATA_Rekap_SPBY_${periode.replace(/\s+/g, '_')}.xlsx`;
+  XLSX.writeFile(wb, filename);
+  closeModal();
+  toast(`Rekap SPBY ${periode} berhasil diunduh (${rows.length} baris).`, 'success');
+}
 
 function updateSPBYSummary(total, bulanan, count) {
   const now = new Date();
@@ -1139,8 +1504,7 @@ function updateSPBYSummary(total, bulanan, count) {
 }
 
 function subscribeRekamSPBY() {
-  const tbodyPage = document.getElementById('tbody-rekam-spby');
-  const tbodyBeranda = document.getElementById('tbody-beranda-spby');
+  const tbody = document.getElementById('tbody-rekam-spby');
 
   db.collection('rekam_spby').onSnapshot(snapshot => {
     const rows = [];
@@ -1149,38 +1513,108 @@ function subscribeRekamSPBY() {
 
     snapshot.forEach(doc => {
       const d = doc.data();
+      d.id = doc.id;
       const nom = Number(d.nominal || 0);
+      const ts = d.createdAt && d.createdAt.toMillis ? d.createdAt.toMillis() : 0;
+      d._urut = typeof d.urut === 'number' ? d.urut : ts;
       rows.push(d);
       const m = /^(\d{4})-(\d{2})/.exec(d.tanggal || '');
-      if (m && +m[1] === TAHUN_ANGGARAN) { bulanan[+m[2] - 1] += nom; total += nom; count++; }
+      if (m && +m[1] === TAHUN_ANGGARAN) { bulanan[+m[2] - 1] += nom; total += nom; if (nom > 0) count++; }
     });
+    // urutan tetap sesuai waktu input (data lama tanpa 'urut' memakai waktu simpan, lalu tanggal)
+    rows.sort((a, b) => (a._urut - b._urut) || (a.tanggal || '').localeCompare(b.tanggal || ''));
     spbyRows = rows;
-    const cnt = document.getElementById('spby-count');
-    if (cnt) cnt.textContent = `${rows.length} baris SPBY tersimpan · total TA ${TAHUN_ANGGARAN}: ${rupiah(total)}`;
-    rows.sort((a, b) => (b.tanggal || '').localeCompare(a.tanggal || ''));
-
-    const renderRow = d => `<tr><td class="px-3 py-2">${esc(d.tanggal || '-')}</td><td class="px-3 py-2">${esc(d.uraian || '-')}</td><td class="px-3 py-2 text-right font-mono">${rupiah(d.nominal)}</td></tr>`;
-    if (tbodyPage) tbodyPage.innerHTML = rows.length ? rows.map(renderRow).join('') : `<tr><td colspan="3" class="text-center py-4 text-slate-400">Belum ada data.</td></tr>`;
-    if (tbodyBeranda) tbodyBeranda.innerHTML = rows.length ? rows.slice(0, 10).map(renderRow).join('') : `<tr><td colspan="3" class="text-center py-4 text-slate-400">Belum ada data SPBY.</td></tr>`;
+    refreshSPBYFilterOptions();
+    updateSPBYFooter();
     updateSPBYSummary(total, bulanan, count);
+
+    // Jangan render ulang saat pengguna sedang mengetik / gema dari tulisan sendiri,
+    // kecuali ada baris yang ditambah atau dihapus.
+    const structural = snapshot.docChanges().some(c => c.type !== 'modified');
+    const typing = tbody && tbody.contains(document.activeElement);
+    if (!structural && (snapshot.metadata.hasPendingWrites || typing)) {
+      if (typing && !snapshot.metadata.hasPendingWrites) spbyDirty = true;
+      return;
+    }
+    renderSPBYTable();
   }, err => {
     console.error('Gagal memuat rekam_spby:', err);
-    const msg = `<tr><td colspan="3" class="text-center py-4 text-red-400">Gagal memuat data (cek Firestore rules).</td></tr>`;
-    if (tbodyPage) tbodyPage.innerHTML = msg;
-    if (tbodyBeranda) tbodyBeranda.innerHTML = msg;
+    if (tbody) tbody.innerHTML = '<tr><td colspan="18" class="text-center py-6 text-red-400">Gagal memuat data (cek Firestore rules).</td></tr>';
   });
 }
 
 function subscribeLembur() {
-  const tb = document.getElementById('tbody-laporan-lembur');
   const gal = document.getElementById('beranda-galeri-lembur');
   db.collection('laporan_lembur').orderBy('createdAt', 'desc').limit(100).onSnapshot(s => {
     listLaporanLembur = s.docs.map(d => ({ id: d.id, ...d.data() }));
-    if (tb) tb.innerHTML = listLaporanLembur.length ? listLaporanLembur.map(d => `<tr><td class="px-4 py-3">${esc(d.nama)}</td><td class="px-4 py-3">${esc(d.tgl)}</td><td class="px-4 py-3">${esc(d.output)}</td><td class="px-4 py-3">${safeImg(d.foto) ? `<img src="${safeImg(d.foto)}" class="w-12 h-12 object-cover rounded">` : '-'}</td></tr>`).join('') : `<tr><td colspan="4" class="text-center py-4 text-slate-400">Belum ada data.</td></tr>`;
     const imgs = listLaporanLembur.filter(d => safeImg(d.foto)).slice(0, 6);
-    if (gal) gal.innerHTML = imgs.length ? imgs.map(d => `<img src="${safeImg(d.foto)}" onclick="openImageModal(this.src, '${esc(d.nama || '-')} · ${esc(d.tgl || '-')}', '${esc((d.output || '').replace(/'/g, '&#39;'))}')" class="w-full h-20 object-cover rounded-lg cursor-pointer hover:opacity-90 transition">`).join('') : '<p class="col-span-3">Belum ada foto. Lihat semua di menu Dokumentasi.</p>';
+    if (gal) gal.innerHTML = imgs.length ? imgs.map(d => `<img src="${safeImg(d.foto)}" onclick="openImageModal(this.src, '${esc(d.nama || '-')} · ${esc(d.tgl || '-')}', '${esc((d.jamLembur ? d.jamLembur + ' jam (' + (d.jenisHari || '-') + ') — ' : '') + (d.output || '')).replace(/'/g, '&#39;')}')" class="w-full h-20 object-cover rounded-lg cursor-pointer hover:opacity-90 transition">`).join('') : '<p class="col-span-3">Belum ada foto. Lihat semua di menu Dokumentasi.</p>';
     renderDokumentasiLembur();
+    renderMonitoringLembur();
   }, err => console.error('Gagal memuat laporan_lembur:', err));
+}
+
+function subscribePengajuanLembur() {
+  db.collection('pengajuan_lembur').orderBy('createdAt', 'desc').limit(100).onSnapshot(s => {
+    listPengajuanLembur = s.docs.map(d => ({ id: d.id, ...d.data() }));
+    renderMonitoringLembur();
+  }, err => console.error('Gagal memuat pengajuan_lembur:', err));
+}
+
+// Cocokkan laporan realisasi untuk satu peserta dalam rentang tanggal pengajuan
+// (tglMulai s/d tglMulai + durasiHari dibulatkan ke atas, dikurangi 1 hari)
+function cariLaporanUntukPeserta(nama, tglMulai, durasiHari) {
+  if (!nama || !tglMulai) return null;
+  const start = new Date(tglMulai + 'T00:00:00');
+  if (isNaN(start.getTime())) return listLaporanLembur.find(l => l.nama === nama) || null;
+  const span = Math.max(0, Math.ceil(Number(durasiHari) || 1) - 1);
+  const end = new Date(start); end.setDate(end.getDate() + span);
+  const endStr = end.toISOString().slice(0, 10);
+  return listLaporanLembur.find(l => l.nama === nama && l.tgl >= tglMulai && l.tgl <= endStr) || null;
+}
+
+function renderMonitoringLembur() {
+  const tbody = document.getElementById('tbody-monitoring-lembur');
+  if (!tbody) return; // halaman belum aktif, skip render
+
+  if (!listPengajuanLembur.length) {
+    tbody.innerHTML = '<tr><td colspan="9" class="text-center py-6 text-slate-400">Belum ada pengajuan lembur.</td></tr>';
+    const belumEl = document.getElementById('monitoring-lembur-belum');
+    if (belumEl) belumEl.textContent = '0';
+    return;
+  }
+
+  let no = 0, belumCount = 0;
+  const html = [];
+  listPengajuanLembur.forEach(p => {
+    const pesertaSet = Array.from(new Set([p.ketua, ...(Array.isArray(p.peserta) ? p.peserta : [])].filter(Boolean)));
+    if (!pesertaSet.length) pesertaSet.push('(tanpa peserta)');
+    pesertaSet.forEach((nama, idx) => {
+      no++;
+      const lap = cariLaporanUntukPeserta(nama, p.tglMulai, p.durasiHari);
+      const sudah = !!lap;
+      if (!sudah) belumCount++;
+      html.push(`
+        <tr class="hover:bg-slate-50">
+          <td class="px-3 py-2 text-center">${no}</td>
+          ${idx === 0 ? `
+          <td class="px-3 py-2 font-semibold text-slate-800" rowspan="${pesertaSet.length}">${esc(p.ketua || '-')}</td>
+          <td class="px-3 py-2" rowspan="${pesertaSet.length}">${esc(p.tglMulai || '-')}</td>
+          <td class="px-3 py-2" rowspan="${pesertaSet.length}">${esc(p.perihal || '-')}</td>` : ''}
+          <td class="px-3 py-2">${esc(nama)}</td>
+          <td class="px-3 py-2">${esc(lap?.tgl || '-')}</td>
+          <td class="px-3 py-2">${lap?.jamLembur ? esc(lap.jamLembur) + ' jam (' + esc(lap.jenisHari || '-') + ')' : '-'}</td>
+          <td class="px-3 py-2 max-w-[16rem] truncate" title="${esc(lap?.output || '')}">${esc(lap?.output || '-')}</td>
+          <td class="px-3 py-2 text-center">${safeImg(lap?.foto) ? `<img src="${safeImg(lap.foto)}" onclick="openImageModal(this.src, '${esc(nama)} · ${esc(lap.tgl || '-')}', '${esc((lap.jamLembur ? lap.jamLembur + ' jam (' + (lap.jenisHari || '-') + ') — ' : '') + (lap.output || '')).replace(/'/g, '&#39;')}')" class="w-10 h-10 object-cover rounded cursor-pointer hover:opacity-80 transition mx-auto">` : '-'}</td>
+          <td class="px-3 py-2 text-center">${statusBadge(sudah ? 'Sudah Lapor' : 'Belum Lapor')}</td>
+        </tr>
+      `);
+    });
+  });
+  tbody.innerHTML = html.join('');
+  const belumEl = document.getElementById('monitoring-lembur-belum');
+  if (belumEl) belumEl.textContent = belumCount;
+  if (window.lucide) lucide.createIcons();
 }
 
 function subscribeBelanjaUP() {
@@ -1234,20 +1668,8 @@ function initCharts() {
 // ==========================================================================
 // PERBAIKAN TANGGAL SPBY & RESET DATA
 // ==========================================================================
-// Bulan diambil dari nama sheet (paling andal). Tanggal Excel yang tertukar
-// hari/bulan (07/01 vs 01/07) atau salah tahun (2028) dikoreksi.
-function normalizeTanggal(tgl, mi) {
-  if (mi < 0) return tgl;
-  const target = mi + 1;
-  if (!tgl) return ymd(TAHUN_ANGGARAN, target, 1);
-  const [, m, d] = tgl.split('-').map(Number);
-  if (m === target) return ymd(TAHUN_ANGGARAN, m, d);
-  if (d === target && m <= 28) return ymd(TAHUN_ANGGARAN, target, m); // hari & bulan tertukar
-  return ymd(TAHUN_ANGGARAN, target, Math.min(d, 28));
-}
-
 async function handleResetSPBY() {
-  if (!await confirmModal('Hapus semua data SPBY?', 'Semua data SPBY tersimpan akan dihapus permanen. Setelah itu upload ulang file Excel. Tindakan ini tidak bisa dibatalkan.', 'Ya, hapus semua')) return;
+  if (!await confirmModal('Hapus semua data SPBY?', 'Semua data SPBY tersimpan akan dihapus permanen. Tindakan ini tidak bisa dibatalkan.', 'Ya, hapus semua')) return;
   try {
     const snap = await db.collection('rekam_spby').get();
     for (let i = 0; i < snap.docs.length; i += 400) {
@@ -1255,7 +1677,7 @@ async function handleResetSPBY() {
       snap.docs.slice(i, i + 400).forEach(d => b.delete(d.ref));
       await b.commit();
     }
-    toast(`${snap.size} data SPBY dihapus. Silakan upload ulang Excel.`, 'success');
+    toast(`${snap.size} data SPBY dihapus.`, 'success');
   } catch (err) {
     toast(err.code === 'permission-denied' ? 'Ditolak: hanya Operator/Super Admin yang boleh menghapus.' : 'Gagal menghapus data. (' + err.message + ')', 'error');
   }
