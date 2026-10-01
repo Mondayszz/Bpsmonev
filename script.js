@@ -240,7 +240,30 @@ function navigateTo(pageId) {
     target.classList.remove('hidden');
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
+  closeSidebar(); // di HP, menu otomatis tertutup setelah pindah halaman
 }
+
+// ==========================================================================
+// SIDEBAR MOBILE: buka/tutup drawer (hamburger di header, overlay gelap, tombol X)
+// ==========================================================================
+function openSidebar() {
+  document.getElementById('main-sidebar')?.classList.remove('-translate-x-full');
+  document.getElementById('main-sidebar')?.classList.add('translate-x-0');
+  const ov = document.getElementById('sidebar-overlay');
+  if (ov) { ov.classList.remove('opacity-0', 'pointer-events-none'); ov.classList.add('opacity-100'); }
+  document.body.classList.add('overflow-hidden', 'lg:overflow-auto');
+}
+
+function closeSidebar() {
+  document.getElementById('main-sidebar')?.classList.add('-translate-x-full');
+  document.getElementById('main-sidebar')?.classList.remove('translate-x-0');
+  const ov = document.getElementById('sidebar-overlay');
+  if (ov) { ov.classList.add('opacity-0', 'pointer-events-none'); ov.classList.remove('opacity-100'); }
+  document.body.classList.remove('overflow-hidden');
+}
+
+// Kalau layar diresize/rotasi ke ukuran desktop saat drawer kebuka di HP, rapikan kembali
+window.addEventListener('resize', () => { if (window.innerWidth >= 1024) closeSidebar(); });
 
 function toggleSubmenu(id) {
   const el = document.getElementById(id);

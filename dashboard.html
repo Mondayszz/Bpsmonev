@@ -21,19 +21,25 @@
 
   <link rel="stylesheet" href="style.css">
 </head>
-<body class="bg-slate-50 font-sans text-slate-800 flex min-h-screen">
+<body class="bg-slate-50 font-sans text-slate-800 flex min-h-screen overflow-x-hidden">
+
+  <!-- OVERLAY GELAP SAAT SIDEBAR DIBUKA DI HP (tap untuk menutup) -->
+  <div id="sidebar-overlay" onclick="closeSidebar()" class="fixed inset-0 bg-slate-900/50 z-40 opacity-0 pointer-events-none transition-opacity duration-300 lg:hidden"></div>
 
   <!-- SIDEBAR NAVIGASI UTAMA -->
-  <aside class="w-64 bg-white border-r border-slate-100 flex flex-col justify-between shrink-0 sticky top-0 h-screen overflow-y-auto">
+  <aside id="main-sidebar" class="w-72 lg:w-64 bg-white border-r border-slate-100 flex flex-col justify-between shrink-0 fixed lg:sticky top-0 left-0 h-screen overflow-y-auto z-50 -translate-x-full lg:translate-x-0 transition-transform duration-300 ease-in-out">
     <div>
       <div class="p-5 border-b border-slate-100 flex items-center gap-3 bg-gradient-to-br from-blue-600 to-slate-400 text-white">
         <div class="bg-white/95 p-1.5 rounded-xl flex items-center justify-center w-10 h-10 shrink-0 shadow-sm">
           <img src="https://upload.wikimedia.org/wikipedia/commons/2/28/Lambang_Badan_Pusat_Statistik_%28BPS%29_Indonesia.svg" alt="BPS Logo" class="max-h-full">
         </div>
-        <div>
+        <div class="min-w-0 flex-1">
           <h1 class="font-extrabold text-base leading-tight tracking-[0.14em]">KIBATA</h1>
           <p class="text-[10px] text-blue-50">BPS Kota Kotamobagu</p>
         </div>
+        <button type="button" onclick="closeSidebar()" aria-label="Tutup menu" class="lg:hidden shrink-0 w-8 h-8 rounded-lg flex items-center justify-center text-white/90 hover:bg-white/15 transition">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
       </div>
 
       <nav class="p-3 space-y-1.5 text-xs font-medium">
@@ -125,10 +131,15 @@
   <div class="flex-1 min-w-0 flex flex-col">
 
   <!-- HEADER TERPADU (judul halaman kiri, profil & keluar kanan) -->
-  <header class="app-header sticky top-0 z-30 flex items-center justify-between gap-4 px-6 md:px-8 py-3">
-    <div class="min-w-0">
-      <h2 id="header-title" class="text-lg md:text-xl font-bold text-slate-800 truncate">Selamat Datang di KIBATA</h2>
-      <p id="header-subtitle" class="text-xs text-slate-400 truncate">Kabal Integrasi Berkelanjutan Administrasi Terpadu Dan Akuntabel &middot; BPS Kota Kotamobagu &middot; TA 2026</p>
+  <header class="app-header sticky top-0 z-20 flex items-center justify-between gap-2 sm:gap-4 px-3 sm:px-6 md:px-8 py-3">
+    <div class="flex items-center gap-2 sm:gap-3 min-w-0">
+      <button type="button" id="btn-open-sidebar" onclick="openSidebar()" aria-label="Buka menu" class="lg:hidden shrink-0 w-9 h-9 rounded-lg flex items-center justify-center text-slate-600 hover:bg-slate-100 transition">
+        <i data-lucide="menu" class="w-5 h-5"></i>
+      </button>
+      <div class="min-w-0">
+        <h2 id="header-title" class="text-base sm:text-lg md:text-xl font-bold text-slate-800 truncate">Selamat Datang di KIBATA</h2>
+        <p id="header-subtitle" class="hidden sm:block text-xs text-slate-400 truncate">Kabal Integrasi Berkelanjutan Administrasi Terpadu Dan Akuntabel &middot; BPS Kota Kotamobagu &middot; TA 2026</p>
+      </div>
     </div>
     <div id="user-profile-section" class="hidden flex items-center gap-3 shrink-0">
       <button type="button" id="btn-profile-menu" onclick="openOperatorMenu()" class="profile-btn flex items-center gap-3 rounded-xl px-2 py-1 -mx-2 text-left cursor-default" aria-label="Profil akun">
@@ -150,7 +161,7 @@
   </header>
 
   <!-- CONTENT VIEW -->
-  <main class="flex-1 p-6 md:p-8 overflow-y-auto space-y-6">
+  <main class="flex-1 p-4 sm:p-6 md:p-8 overflow-y-auto space-y-6">
 
     <!-- ================= 1. BERANDA ================= -->
     <div id="page-beranda" class="page-view space-y-6">
@@ -202,7 +213,7 @@
       </div>
 
       <!-- SEKSI BERANDA: SK & SUBBAGIAN -->
-      <div class="bg-white rounded-xl border border-slate-200 p-6 space-y-4 shadow-sm">
+      <div class="bg-white rounded-xl border border-slate-200 p-4 sm:p-6 space-y-4 shadow-sm">
         <div class="border-b border-slate-200 pb-3 flex items-center justify-between">
           <h3 class="font-bold text-slate-800 text-base flex items-center gap-2">
             <i data-lucide="file-check" class="w-5 h-5 text-blue-800"></i> Dokumen 
@@ -210,7 +221,7 @@
           <span class="text-xs bg-blue-100 text-blue-900 px-2.5 py-1 rounded-full font-medium"></span>
         </div>
 
-        <div class="flex items-center gap-2 border-b border-slate-100 pb-2 text-xs font-semibold">
+        <div class="flex items-center gap-2 border-b border-slate-100 pb-2 text-xs font-semibold overflow-x-auto whitespace-nowrap">
           <button onclick="switchSKTab('tab-sk')" id="btn-tab-sk" class="px-4 py-2 rounded-lg bg-blue-800 text-white transition">SK</button>
           <button onclick="switchSKTab('tab-kak')" id="btn-tab-kak" class="px-4 py-2 rounded-lg bg-slate-100 text-slate-600 hover:bg-blue-50 hover:text-blue-800 transition">KAK </button>
           <button onclick="switchSKTab('tab-spm')" id="btn-tab-spm" class="px-4 py-2 rounded-lg bg-slate-100 text-slate-600 hover:bg-blue-50 hover:text-blue-800 transition">SPM </button>
@@ -234,7 +245,7 @@
       </div>
 
       <!-- SEKSI BERANDA: DOKUMENTASI -->
-      <div class="bg-white rounded-xl border border-slate-200 p-6 space-y-4 shadow-sm">
+      <div class="bg-white rounded-xl border border-slate-200 p-4 sm:p-6 space-y-4 shadow-sm">
         <div class="border-b border-slate-200 pb-3 flex items-center justify-between">
           <h3 class="font-bold text-slate-800 text-base flex items-center gap-2">
             <i data-lucide="camera" class="w-5 h-5 text-blue-800"></i>Dokumentasi 
@@ -298,6 +309,7 @@
           </div>
           <span class="text-[11px] font-bold bg-orange-50 text-orange-600 border border-orange-200 px-2.5 py-1 rounded-full"><span id="monitoring-lembur-belum">0</span> belum lapor</span>
         </div>
+        <p class="lg:hidden text-[11px] text-slate-400 px-4 pt-2 flex items-center gap-1"><i data-lucide="move-horizontal" class="w-3.5 h-3.5"></i> Geser tabel ke samping untuk lihat kolom lainnya</p>
         <div class="overflow-x-auto">
           <table class="w-full text-left text-xs text-slate-600" style="min-width:1400px;">
             <thead class="text-[10px] font-bold uppercase text-white tracking-wide">
@@ -336,7 +348,7 @@
 
     <!-- 3. INPUT MEMO: SUBJECT MATTER -->
     <div id="page-sm" class="page-view hidden space-y-5">
-      <div class="bg-white p-7 rounded-2xl border border-slate-100 shadow-sm max-w-xl mx-auto space-y-5">
+      <div class="bg-white p-5 sm:p-7 rounded-2xl border border-slate-100 shadow-sm max-w-xl mx-auto space-y-5">
         <h3 class="font-bold text-blue-800 border-b border-slate-100 pb-3 mb-1 text-base tracking-tight">Subject Matter</h3>
         <form id="form-sm" onsubmit="handleSMSubmit(event)" class="space-y-3 text-sm">
           <div>
@@ -357,7 +369,7 @@
 
     <!-- 4. INPUT MEMO: PPK -->
     <div id="page-ppk" class="page-view hidden space-y-5">
-      <div class="bg-white p-7 rounded-2xl border border-slate-100 shadow-sm max-w-xl mx-auto space-y-5">
+      <div class="bg-white p-5 sm:p-7 rounded-2xl border border-slate-100 shadow-sm max-w-xl mx-auto space-y-5">
         <h3 class="font-bold text-blue-800 border-b border-slate-100 pb-3 mb-1 text-base tracking-tight">PPK</h3>
         <form id="form-ppk" onsubmit="handlePPKSubmit(event)" class="space-y-3 text-sm">
           <div><label class="block text-sm font-semibold mb-1.5 text-slate-600">Pilih Berkas Masuk</label><select id="ppk-select-berkas" required class="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm bg-white focus:ring-2 focus:ring-blue-600/30 focus:border-blue-600 outline-none transition"></select></div>
@@ -374,7 +386,7 @@
 
     <!-- 5. INPUT MEMO: PPSPM -->
     <div id="page-ppspm" class="page-view hidden space-y-5">
-      <div class="bg-white p-7 rounded-2xl border border-slate-100 shadow-sm max-w-xl mx-auto space-y-5">
+      <div class="bg-white p-5 sm:p-7 rounded-2xl border border-slate-100 shadow-sm max-w-xl mx-auto space-y-5">
         <h3 class="font-bold text-blue-800 border-b border-slate-100 pb-3 mb-1 text-base tracking-tight">PPSPM</h3>
         <form id="form-ppspm" onsubmit="handlePPSPMSubmit(event)" class="space-y-3 text-sm">
           <div><label class="block text-sm font-semibold mb-1.5 text-slate-600">Pilih Berkas Masuk</label><select id="ppspm-select-berkas" required class="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm bg-white focus:ring-2 focus:ring-blue-600/30 focus:border-blue-600 outline-none transition"></select></div>
@@ -390,7 +402,7 @@
     <div id="page-operator" class="page-view hidden space-y-6">
 
       <!-- APPROVAL BERKAS DARI PPSPM -> DITERUSKAN KE BENDAHARA -->
-      <div class="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm max-w-2xl mx-auto space-y-5">
+      <div class="bg-white p-4 sm:p-6 rounded-2xl border border-slate-100 shadow-sm max-w-2xl mx-auto space-y-5">
         <div class="border-b border-slate-100 pb-3 flex items-start justify-between gap-3 flex-wrap">
           <div>
             <h3 class="font-bold text-blue-800 text-base tracking-tight flex items-center gap-2">
@@ -417,7 +429,7 @@
       </div>
 
       <!-- KELOLA ROLE AKUN KARYAWAN -->
-      <div class="bg-white p-6 rounded-xl border shadow-sm max-w-2xl mx-auto space-y-5">
+      <div class="bg-white p-4 sm:p-6 rounded-xl border shadow-sm max-w-2xl mx-auto space-y-5">
         <div class="border-b pb-2 flex items-start justify-between gap-3">
           <div>
             <h3 class="font-bold text-blue-800">Kelola Akun &amp; Role Karyawan</h3>
@@ -490,7 +502,7 @@
 
     <!-- 7. INPUT MEMO: BENDAHARA -->
     <div id="page-bendahara" class="page-view hidden space-y-5">
-      <div class="bg-white p-7 rounded-2xl border border-slate-100 shadow-sm max-w-xl mx-auto space-y-5">
+      <div class="bg-white p-5 sm:p-7 rounded-2xl border border-slate-100 shadow-sm max-w-xl mx-auto space-y-5">
         <h3 class="font-bold text-blue-800 border-b border-slate-100 pb-3 mb-1 text-base tracking-tight">Form Pencairan Bendahara</h3>
         <form id="form-bendahara" onsubmit="handleBendaharaSubmit(event)" class="space-y-3 text-sm">
           <div><label class="block text-sm font-semibold mb-1.5 text-slate-600">Pilih Berkas Teruji</label><select id="bendahara-select-berkas" required class="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm bg-white focus:ring-2 focus:ring-blue-600/30 focus:border-blue-600 outline-none transition"></select></div>
@@ -512,11 +524,12 @@
           <p class="text-xs text-slate-400 mt-1">Berkas yang sudah dicairkan Bendahara masuk ke sini. Isi Tanggal Arsip &amp; Keterangan lalu klik <b>Arsipkan</b> untuk menandai berkas selesai &amp; tersimpan permanen.</p>
         </div>
 
-        <div class="flex items-center gap-2 border-b border-slate-100 pb-2 text-xs font-semibold">
+        <div class="flex items-center gap-2 border-b border-slate-100 pb-2 text-xs font-semibold overflow-x-auto whitespace-nowrap">
           <button onclick="switchArsiparisTab('siap')" id="btn-arsiparis-siap" class="px-4 py-2 rounded-lg bg-blue-800 text-white transition">Siap Diarsipkan <span id="arsiparis-count-siap" class="ml-1 bg-white/20 px-1.5 rounded-full">0</span></button>
           <button onclick="switchArsiparisTab('selesai')" id="btn-arsiparis-selesai" class="px-4 py-2 rounded-lg bg-slate-100 text-slate-600 hover:bg-blue-50 hover:text-blue-800 transition">Sudah Diarsipkan <span id="arsiparis-count-selesai" class="ml-1 bg-slate-200 px-1.5 rounded-full">0</span></button>
         </div>
 
+        <p class="lg:hidden text-[11px] text-slate-400 flex items-center gap-1"><i data-lucide="move-horizontal" class="w-3.5 h-3.5"></i> Geser tabel ke samping untuk lihat kolom lainnya</p>
         <div class="spby-scroll">
           <table class="spby-table text-xs text-slate-700" style="min-width:1900px;">
             <thead>
@@ -543,8 +556,8 @@
 
     <!-- 8. LEMBUR: PENGAJUAN LEMBUR -->
     <div id="page-pengajuan-lembur" class="page-view hidden space-y-5">
-      <div class="bg-white p-7 rounded-2xl border border-slate-100 shadow-sm max-w-xl mx-auto space-y-5">
-        <h3 class="font-bold text-blue-800 border-b border-slate-100 pb-3 mb-1 text-base tracking-tight">Form Pengajuan Lembur</h3>
+      <div class="bg-white p-5 sm:p-7 rounded-2xl border border-slate-100 shadow-sm max-w-xl mx-auto space-y-5">
+        <h3 class="font-bold text-blue-800 border-b border-slate-100 pb-3 mb-1 text-base tracking-tight">Surat Perintah Kerja Lembur</h3>
         <form id="form-pengajuan-lembur" onsubmit="handlePengajuanLemburSubmit(event)" class="space-y-3 text-sm">
           <div><label class="block text-sm font-semibold mb-1.5 text-slate-600">Nama Ketua Tim</label><select id="lembur-ketua" required class="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm bg-white focus:ring-2 focus:ring-blue-600/30 focus:border-blue-600 outline-none transition"></select></div>
           <div><label class="block text-sm font-semibold mb-1.5 text-slate-600">Perihal Lembur</label><input type="text" id="lembur-perihal" required placeholder="Contoh: Penyelesaian rekap SPBY bulan berjalan" class="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm bg-slate-50 focus:bg-white focus:ring-2 focus:ring-blue-600/30 focus:border-blue-600 outline-none transition"></div>
@@ -566,7 +579,7 @@
 
     <!-- 9. LEMBUR: LAPORAN LEMBUR -->
     <div id="page-laporan-lembur" class="page-view hidden space-y-5">
-      <div class="bg-white p-7 rounded-2xl border border-slate-100 shadow-sm max-w-xl mx-auto space-y-5">
+      <div class="bg-white p-5 sm:p-7 rounded-2xl border border-slate-100 shadow-sm max-w-xl mx-auto space-y-5">
         <h3 class="font-bold text-blue-800 border-b border-slate-100 pb-3 mb-1 text-base tracking-tight">Form Laporan Hasil Lembur</h3>
         <form id="form-laporan-lembur" onsubmit="handleLaporanLemburFirebase(event)" class="space-y-3 text-sm">
           <div><label class="block text-sm font-semibold mb-1.5 text-slate-600">Nama Peserta</label><select id="lap-nama" required class="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm bg-white focus:ring-2 focus:ring-blue-600/30 focus:border-blue-600 outline-none transition"></select></div>
@@ -594,10 +607,10 @@
             <h3 class="font-bold text-blue-800 text-base tracking-tight">Rekam SPBY Bendahara</h3>
             <p class="text-xs text-slate-400 mt-1">Isi langsung di tabel, isi No. SPM lalu filter per SPM. Setiap perubahan tersimpan otomatis dan realtime ke Beranda.</p>
           </div>
-          <div class="flex items-center gap-2">
-            <button type="button" onclick="printSPBY()" class="btn-ghost flex items-center gap-1.5"><i data-lucide="printer" class="w-4 h-4"></i> Cetak Landscape</button>
-            <button type="button" onclick="openExportSPBY()" class="btn-ghost flex items-center gap-1.5"><i data-lucide="file-spreadsheet" class="w-4 h-4"></i> Export Excel</button>
-            <button type="button" id="btn-tambah-spby" onclick="addSPBYRow()" class="bg-blue-800 hover:bg-blue-900 text-white text-xs px-4 py-2.5 rounded-xl font-bold flex items-center gap-1.5 transition"><i data-lucide="plus" class="w-4 h-4"></i> Tambah Baris</button>
+          <div class="flex items-center gap-2 flex-wrap w-full sm:w-auto">
+            <button type="button" onclick="printSPBY()" class="btn-ghost flex items-center gap-1.5 whitespace-nowrap"><i data-lucide="printer" class="w-4 h-4"></i> Cetak Landscape</button>
+            <button type="button" onclick="openExportSPBY()" class="btn-ghost flex items-center gap-1.5 whitespace-nowrap"><i data-lucide="file-spreadsheet" class="w-4 h-4"></i> Export Excel</button>
+            <button type="button" id="btn-tambah-spby" onclick="addSPBYRow()" class="bg-blue-800 hover:bg-blue-900 text-white text-xs px-4 py-2.5 rounded-xl font-bold flex items-center gap-1.5 transition whitespace-nowrap"><i data-lucide="plus" class="w-4 h-4"></i> Tambah Baris</button>
           </div>
         </div>
 
@@ -612,6 +625,7 @@
         </div>
         <datalist id="spby-spm-list"></datalist>
 
+        <p class="lg:hidden no-print text-[11px] text-slate-400 flex items-center gap-1"><i data-lucide="move-horizontal" class="w-3.5 h-3.5"></i> Geser tabel ke samping untuk lihat kolom lainnya</p>
         <div class="spby-scroll">
           <table class="spby-table text-xs text-slate-700">
             <thead>
@@ -658,7 +672,7 @@
 
     <!-- 11. BELANJA UP: BUKTI BELANJA -->
     <div id="page-up" class="page-view hidden space-y-5">
-      <div class="bg-white p-7 rounded-2xl border border-slate-100 shadow-sm max-w-xl mx-auto space-y-5">
+      <div class="bg-white p-5 sm:p-7 rounded-2xl border border-slate-100 shadow-sm max-w-xl mx-auto space-y-5">
         <h3 class="font-bold text-blue-800 border-b border-slate-100 pb-3 mb-1 text-base tracking-tight">Form Bukti Belanja UP</h3>
         <form id="form-up" onsubmit="handleUPFirebase(event)" class="space-y-3 text-sm">
           <div><label class="block text-sm font-semibold mb-1.5 text-slate-600">Tanggal Belanja</label><input type="date" id="up-tgl" required class="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm bg-slate-50 focus:bg-white focus:ring-2 focus:ring-blue-600/30 focus:border-blue-600 outline-none transition"></div>
@@ -673,7 +687,7 @@
 
     <!-- 11B. DOKUMENTASI: FOTO LEMBUR & BELANJA UP (GALERI FULL, BISA DIKLIK) -->
     <div id="page-dokumentasi" class="page-view hidden space-y-6">
-      <div class="bg-white rounded-2xl border border-slate-200 p-6 space-y-4 shadow-sm">
+      <div class="bg-white rounded-2xl border border-slate-200 p-4 sm:p-6 space-y-4 shadow-sm">
         <div class="border-b border-slate-200 pb-3 flex items-center justify-between flex-wrap gap-2">
           <h3 class="font-bold text-slate-800 text-base flex items-center gap-2">
             <i data-lucide="images" class="w-5 h-5 text-blue-800"></i> Dokumentasi Kegiatan
@@ -681,7 +695,7 @@
           
         </div>
 
-        <div class="flex items-center gap-2 border-b border-slate-100 pb-2 text-xs font-semibold">
+        <div class="flex items-center gap-2 border-b border-slate-100 pb-2 text-xs font-semibold overflow-x-auto whitespace-nowrap">
           <button onclick="switchDokTab('dok-lembur')" id="btn-dok-lembur" class="px-4 py-2 rounded-lg bg-blue-800 text-white transition">Dokumentasi Lembur</button>
           <button onclick="switchDokTab('dok-belanja')" id="btn-dok-belanja" class="px-4 py-2 rounded-lg bg-slate-100 text-slate-600 hover:bg-blue-50 hover:text-blue-800 transition">Dokumentasi Belanja UP</button>
         </div>
@@ -704,7 +718,7 @@
 
     <!-- 12. ARSIP: UPLOAD KE GOOGLE DRIVE -->
     <div id="page-arsip-sk" class="page-view hidden space-y-5">
-      <div class="bg-white p-7 rounded-2xl border border-slate-100 shadow-sm max-w-xl mx-auto space-y-5">
+      <div class="bg-white p-5 sm:p-7 rounded-2xl border border-slate-100 shadow-sm max-w-xl mx-auto space-y-5">
         <div class="flex items-center justify-between border-b border-slate-100 pb-3">
           <h3 class="font-bold text-blue-800 text-base tracking-tight">Upload Arsip SK</h3>
           <a href="https://drive.google.com/drive/folders/12d6-RS0-COTHXLIuzoUQBsrOqejZ3Bvm" target="_blank" rel="noopener" class="text-xs font-bold text-blue-600 hover:underline">Buka Folder Drive</a>
@@ -718,7 +732,7 @@
     </div>
 
     <div id="page-arsip-kak" class="page-view hidden space-y-5">
-      <div class="bg-white p-7 rounded-2xl border border-slate-100 shadow-sm max-w-xl mx-auto space-y-5">
+      <div class="bg-white p-5 sm:p-7 rounded-2xl border border-slate-100 shadow-sm max-w-xl mx-auto space-y-5">
         <div class="flex items-center justify-between border-b border-slate-100 pb-3">
           <h3 class="font-bold text-blue-800 text-base tracking-tight">Upload Arsip KAK</h3>
           <a href="https://drive.google.com/drive/folders/1mBXznCoARoUfULD2r3rz8-aGGu92tXjj" target="_blank" rel="noopener" class="text-xs font-bold text-blue-600 hover:underline">Buka Folder Drive</a>
@@ -732,7 +746,7 @@
     </div>
 
     <div id="page-arsip-spm" class="page-view hidden space-y-5">
-      <div class="bg-white p-7 rounded-2xl border border-slate-100 shadow-sm max-w-xl mx-auto space-y-5">
+      <div class="bg-white p-5 sm:p-7 rounded-2xl border border-slate-100 shadow-sm max-w-xl mx-auto space-y-5">
         <div class="flex items-center justify-between border-b border-slate-100 pb-3">
           <h3 class="font-bold text-blue-800 text-base tracking-tight">Upload Arsip SPM</h3>
           <a href="https://drive.google.com/drive/folders/1NfYG18sgPygFqT8i6Sjez2rRnATXoEMh" target="_blank" rel="noopener" class="text-xs font-bold text-blue-600 hover:underline">Buka Folder Drive</a>
