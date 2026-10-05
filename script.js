@@ -215,6 +215,41 @@ function populatePegawaiDropdowns() {
       `;
     });
   }
+
+  document.getElementById('lap-nama')?.addEventListener('change', refreshLaporanSpklOptions);
+  document.getElementById('lap-tgl')?.addEventListener('change', refreshLaporanSpklOptions);
+}
+
+function refreshLaporanSpklOptions() {
+  const nama = document.getElementById('lap-nama')?.value || '';
+  const tgl = document.getElementById('lap-tgl')?.value || '';
+  const sel = document.getElementById('lap-spkl');
+  const hint = document.getElementById('lap-spkl-hint');
+  if (!sel) return;
+
+  const opsi = listPengajuanLembur
+    .filter(p => {
+      const pesertaSet = Array.from(new Set([p.ketua, ...(Array.isArray(p.peserta) ? p.peserta : [])].filter(Boolean)));
+      if (!pesertaSet.includes(nama)) return false;
+      if (!tgl) return true;
+      const start = new Date((p.tglMulai || '') + 'T00:00:00');
+      if (isNaN(start.getTime())) return true;
+      const span = Math.max(0, Math.ceil(Number(p.durasiHari) || 1) - 1);
+      const end = new Date(start); end.setDate(end.getDate() + span);
+      const endStr = end.toISOString().slice(0, 10);
+      return tgl >= (p.tglMulai || '') && tgl <= endStr;
+    })
+    .map(p => (p.noSpkl || '').trim())
+    .filter(Boolean);
+
+  const unique = [...new Set(opsi)].sort((a, b) => a.localeCompare(b, 'id', { numeric: true }));
+  sel.innerHTML = '<option value="">-- Pilih Nomor SPKL --</option>' + unique.map(v => `<option value="${esc(v)}">${esc(v)}</option>`).join('');
+  sel.disabled = !nama || !unique.length;
+  if (hint) {
+    hint.textContent = !nama
+      ? 'Pilih nama peserta terlebih dahulu.'
+      : (unique.length ? 'Pilih nomor SPKL sesuai tim/penugasan.' : 'Tidak ada SPKL aktif untuk peserta ini pada tanggal tersebut.');
+  }
 }
 
 let currentRoles = [];
@@ -350,7 +385,7 @@ function renderArsiparisTable() {
 
   const rows = arsiparisTab === 'siap' ? siap : selesai;
   if (!rows.length) {
-    tbody.innerHTML = `<tr><td colspan="10" class="text-center py-6 text-slate-400">${arsiparisTab === 'siap' ? 'Belum ada berkas yang siap diarsipkan.' : 'Belum ada berkas yang sudah diarsipkan.'}</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="11" class="text-center py-6 text-slate-400">${arsiparisTab === 'siap' ? 'Belum ada berkas yang siap diarsipkan.' : 'Belum ada berkas yang sudah diarsipkan.'}</td></tr>`;
     return;
   }
 
@@ -364,6 +399,7 @@ function renderArsiparisTable() {
           <td class="spby-td">${esc(b.smPembuat || '-')}</td>
           <td class="spby-td">${esc(b.bendaharaTglSp2d || '-')}</td>
           <td class="spby-td">${esc(b.bendaharaTglTransfer || '-')}</td>
+          <td class="spby-td">${esc(b.bendaharaTglRekap || '-')}</td>
           <td class="spby-td"><input type="date" id="arsiparis-tgl-${b.id}" class="spby-in"></td>
           <td class="spby-td"><input type="text" id="arsiparis-ket-${b.id}" placeholder="Keterangan / lokasi arsip" class="spby-in"></td>
           <td class="spby-td text-center">${statusBadge('Siap Diarsipkan')}</td>
@@ -378,10 +414,16 @@ function renderArsiparisTable() {
         <td class="spby-td">${esc(b.smPembuat || '-')}</td>
         <td class="spby-td">${esc(b.bendaharaTglSp2d || '-')}</td>
         <td class="spby-td">${esc(b.bendaharaTglTransfer || '-')}</td>
+        <td class="spby-td">${esc(b.bendaharaTglRekap || '-')}</td>
         <td class="spby-td">${esc(b.arsipTglArsip || '-')}</td>
         <td class="spby-td">${esc(b.arsipKeterangan || '-')}</td>
         <td class="spby-td text-center">${statusBadge('Sudah Diarsipkan')}</td>
-        <td class="spby-td text-center no-print text-slate-300"><i data-lucide="check-circle-2" class="w-4 h-4 inline text-blue-700"></i></td>
+        <td class="spby-td text-center no-print">
+          <div class="flex items-center justify-center gap-1">
+            <button type="button" onclick="openEditArsipModal('${b.id}')" class="btn-ghost text-[10px] px-2 py-1">Edit</button>
+            <button type="button" onclick="handleBatalArsip('${b.id}')" class="btn-danger text-[10px] px-2 py-1">Batal</button>
+          </div>
+        </td>
       </tr>`;
   }).join('');
   if (window.lucide) lucide.createIcons();
@@ -406,6 +448,69 @@ async function handleArsipkanBerkas(id) {
     console.error(err);
     toast('Gagal mengarsipkan berkas. (' + (err.message || '') + ')', 'error');
   }
+}
+
+function openEditArsipModal(id) {
+  const b = listBerkas.find(x => x.id === id);
+  if (!b) return;
+  openModal(`
+    <h3 class="modal-title">Edit Data Arsip</h3>
+    <p class="modal-text">Perbarui tanggal/keterangan arsip untuk No Memo <span class="font-mono">${esc(b.smNoMemo || '-')}</span>.</p>
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-4">
+      <div><label class="text-xs font-semibold text-slate-600">Tanggal Arsip</label><input id="edit-arsip-tgl" type="date" value="${esc(b.arsipTglArsip || '')}" class="w-full mt-1 border border-slate-200 rounded-xl px-3 py-2 text-sm"></div>
+      <div><label class="text-xs font-semibold text-slate-600">Keterangan</label><input id="edit-arsip-ket" type="text" value="${esc(b.arsipKeterangan || '')}" class="w-full mt-1 border border-slate-200 rounded-xl px-3 py-2 text-sm"></div>
+    </div>
+    <div class="flex gap-2 justify-end mt-5">
+      <button data-modal-close class="btn-ghost">Batal</button>
+      <button type="button" onclick="submitEditArsip('${id}')" class="bg-blue-800 hover:bg-blue-900 text-white text-xs px-4 py-2 rounded-xl font-bold">Simpan</button>
+    </div>`);
+}
+
+async function submitEditArsip(id) {
+  const tgl = document.getElementById('edit-arsip-tgl')?.value || '';
+  const ket = document.getElementById('edit-arsip-ket')?.value.trim() || '';
+  if (!tgl) { toast('Tanggal arsip wajib diisi.', 'warn'); return; }
+  try {
+    await db.collection('berkas_keuangan').doc(id).update({ arsipTglArsip: tgl, arsipKeterangan: ket });
+    closeModal();
+    toast('Data arsip berhasil diperbarui.', 'success');
+  } catch (err) {
+    toast('Gagal memperbarui data arsip. (' + (err.message || '') + ')', 'error');
+  }
+}
+
+async function handleBatalArsip(id) {
+  if (!await confirmModal('Batalkan status arsip?', 'Berkas akan dikembalikan ke tahap Bendahara agar bisa diperbaiki.', 'Ya, batalkan')) return;
+  try {
+    await db.collection('berkas_keuangan').doc(id).update({
+      statusPosisi: 'Bendahara',
+      arsipTglArsip: '',
+      arsipKeterangan: '',
+      arsipPembuat: ''
+    });
+    toast('Status arsip berhasil dibatalkan.', 'success');
+  } catch (err) {
+    toast('Gagal membatalkan status arsip. (' + (err.message || '') + ')', 'error');
+  }
+}
+
+function exportArsiparisExcel() {
+  if (typeof XLSX === 'undefined') { toast('Library Excel belum termuat, coba refresh halaman.', 'error'); return; }
+  const rows = listBerkas.filter(b => b.statusPosisi === 'Arsip');
+  if (!rows.length) { toast('Belum ada data arsip untuk diexport.', 'warn'); return; }
+  const aoa = [[
+    'No', 'No Memo SM', 'Uraian', 'Pembuat', 'Tgl SP2D', 'Tgl Transfer', 'Tgl Rekap Bendahara', 'Tgl Arsip', 'Keterangan Arsip', 'Pengarsip'
+  ], ...rows.map((b, i) => [
+    i + 1, b.smNoMemo || '', b.smUraian || '', b.smPembuat || '', b.bendaharaTglSp2d || '', b.bendaharaTglTransfer || '',
+    b.bendaharaTglRekap || '', b.arsipTglArsip || '', b.arsipKeterangan || '', b.arsipPembuat || ''
+  ])];
+  const wb = XLSX.utils.book_new();
+  const ws = XLSX.utils.aoa_to_sheet(aoa);
+  ws['!cols'] = [6, 22, 30, 18, 12, 12, 16, 12, 34, 20].map(wch => ({ wch }));
+  XLSX.utils.book_append_sheet(wb, ws, 'Arsip Memo');
+  const stamp = new Date().toISOString().slice(0, 10);
+  XLSX.writeFile(wb, `Arsiparis_${stamp}.xlsx`);
+  toast('Export arsip berhasil.', 'success');
 }
 
 // Box "menunggu approval" di halaman Operator: nampilin berkas yang statusnya 'PPSPM'
@@ -572,6 +677,7 @@ const PAGE_ROLES = {
   'page-sm': ['Subject Matter', 'Operator', 'Super Admin'],
   'page-ppk': ['PPK', 'Operator', 'Super Admin'],
   'page-ppspm': ['PPSPM', 'Operator', 'Super Admin'],
+  'page-operator-approval': ['Operator', 'Super Admin'],
   'page-operator': ['Operator', 'Super Admin'],
   'page-bendahara': ['Bendahara', 'Operator', 'Super Admin'],
   'page-arsiparis': ['Arsiparis', 'Bendahara', 'Operator', 'Super Admin'],
@@ -591,6 +697,7 @@ const PAGE_TITLES = {
   'page-sm': 'Input Memo: Subject Matter',
   'page-ppk': 'Input Memo: PPK',
   'page-ppspm': 'Input Memo: PPSPM',
+  'page-operator-approval': 'Input Memo: Operator (Approval)',
   'page-operator': 'Kelola Akun Karyawan',
   'page-bendahara': 'Input Memo: Bendahara',
   'page-arsiparis': 'Input Memo: Arsiparis',
@@ -964,10 +1071,12 @@ async function handleBendaharaSubmit(e) {
   const pembuat = document.getElementById('bendahara-pembuat').value;
   const tglSp2d = document.getElementById('bendahara-tgl-sp2d').value;
   const tglTransfer = document.getElementById('bendahara-tgl-transfer').value;
+  const tglRekap = document.getElementById('bendahara-tgl-rekap').value;
   const btn = e.target.querySelector('button[type="submit"]');
 
   if (!berkasId) { alert('Pilih berkas teruji terlebih dahulu.'); return; }
   if (!pembuat) { alert('Pilih nama bendahara.'); return; }
+  if (!tglRekap) { alert('Isi tanggal rekap bendahara.'); return; }
 
   btn.disabled = true;
   btn.innerText = 'Menyimpan...';
@@ -976,6 +1085,7 @@ async function handleBendaharaSubmit(e) {
       bendaharaPembuat: pembuat,
       bendaharaTglSp2d: tglSp2d,
       bendaharaTglTransfer: tglTransfer,
+      bendaharaTglRekap: tglRekap,
       statusPosisi: 'Bendahara'
     });
     alert('Pencairan Bendahara berhasil disimpan. Berkas diteruskan ke Arsiparis.');
@@ -994,6 +1104,7 @@ async function handleBendaharaSubmit(e) {
 // ==========================================================================
 async function handlePengajuanLemburSubmit(e) {
   e.preventDefault();
+  const noSpkl = document.getElementById('lembur-no-spkl').value.trim();
   const ketua = document.getElementById('lembur-ketua').value;
   const perihal = document.getElementById('lembur-perihal').value.trim();
   const tglPengajuan = document.getElementById('lembur-tgl-pengajuan').value;
@@ -1002,19 +1113,26 @@ async function handlePengajuanLemburSubmit(e) {
   const peserta = Array.from(document.querySelectorAll('input[name="chk-peserta-lembur"]:checked')).map(el => el.value);
   const btn = e.target.querySelector('button[type="submit"]');
 
+  if (!noSpkl) { alert('Isi nomor SPKL.'); return; }
   if (!ketua) { alert('Pilih nama ketua tim.'); return; }
   if (!perihal) { alert('Isi perihal lembur.'); return; }
   if (!durasiHari || durasiHari <= 0) { alert('Isi durasi lembur (hari) dengan benar.'); return; }
+
+  if (listPengajuanLembur.some(p => String(p.noSpkl || '').trim().toLowerCase() === noSpkl.toLowerCase())) {
+    alert('Nomor SPKL sudah terdaftar. Gunakan nomor SPKL lain.');
+    return;
+  }
 
   btn.disabled = true;
   btn.innerText = 'Menyimpan...';
   try {
     await db.collection('pengajuan_lembur').add({
-      ketua, perihal, tglPengajuan, tglMulai, durasiHari, peserta,
+      noSpkl, ketua, perihal, tglPengajuan, tglMulai, durasiHari, peserta,
       createdAt: firebase.firestore.FieldValue.serverTimestamp()
     });
     alert('Pengajuan lembur berhasil disimpan.');
     e.target.reset();
+    refreshLaporanSpklOptions();
   } catch (err) {
     console.error(err);
     alert('Gagal menyimpan pengajuan lembur. (' + (err.message || '') + ')');
@@ -1052,6 +1170,7 @@ function validateJamLembur() {
 async function handleLaporanLemburFirebase(e) {
   e.preventDefault();
   const nama = document.getElementById('lap-nama').value;
+  const noSpkl = document.getElementById('lap-spkl').value.trim();
   const tgl = document.getElementById('lap-tgl').value;
   const jenisHari = document.getElementById('lap-jenis-hari').value;
   const jamLembur = parseFloat(document.getElementById('lap-jam').value);
@@ -1060,7 +1179,29 @@ async function handleLaporanLemburFirebase(e) {
   const btn = document.getElementById('btn-submit-lembur');
 
   if (!nama) { alert('Pilih nama peserta.'); return; }
+  if (!noSpkl) { alert('Pilih nomor SPKL sesuai pengajuan.'); return; }
+  if (!tgl) { alert('Isi tanggal laporan lembur.'); return; }
   if (!jamLembur || jamLembur <= 0) { alert('Isi jam lembur dengan benar.'); return; }
+  if (!output) { alert('Isi output pekerjaan.'); return; }
+  if (!fotoFile) { alert('Upload foto kegiatan lembur wajib diisi.'); return; }
+
+  const existingSameDate = listLaporanLembur.find(l => l.nama === nama && l.tgl === tgl);
+  if (existingSameDate) {
+    if ((existingSameDate.noSpkl || '') !== noSpkl) {
+      alert(`Peserta ini sudah mengirim laporan di tanggal tersebut dengan No. SPKL ${existingSameDate.noSpkl || '-'}.`);
+    } else {
+      alert('Laporan dengan peserta, tanggal, dan No. SPKL yang sama sudah ada.');
+    }
+    return;
+  }
+
+  const spklValid = listPengajuanLembur.some(p => {
+    if ((p.noSpkl || '').trim() !== noSpkl) return false;
+    const pesertaSet = Array.from(new Set([p.ketua, ...(Array.isArray(p.peserta) ? p.peserta : [])].filter(Boolean)));
+    return pesertaSet.includes(nama);
+  });
+  if (!spklValid) { alert('Nomor SPKL tidak sesuai untuk peserta ini.'); return; }
+
   const max = JAM_LEMBUR_MAX[jenisHari] || 4;
   if (jamLembur > max) {
     alert(`Jam lembur melebihi batas maksimal ${max} jam untuk ${JAM_LEMBUR_LABEL[jenisHari]}. Silakan sesuaikan jam lembur.`);
@@ -1078,12 +1219,13 @@ async function handleLaporanLemburFirebase(e) {
 
     btn.innerText = 'Menyimpan...';
     await db.collection('laporan_lembur').add({
-      nama, tgl, jenisHari, jamLembur, output, foto: fotoBase64,
+      nama, noSpkl, tgl, jenisHari, jamLembur, output, foto: fotoBase64,
       createdAt: firebase.firestore.FieldValue.serverTimestamp()
     });
     alert('Laporan lembur berhasil disimpan.');
     e.target.reset();
     document.getElementById('lap-jam-warning')?.classList.add('hidden');
+    refreshLaporanSpklOptions();
   } catch (err) {
     console.error(err);
     alert('Gagal menyimpan laporan lembur. (' + (err.message || '') + ')');
@@ -1282,19 +1424,44 @@ async function saveSPBYField(id, field, value) {
   }
 }
 
-async function addSPBYRow() {
+function addSPBYRow() {
+  const now = new Date();
+  const tglDefault = ymd(now.getFullYear(), now.getMonth() + 1, now.getDate());
+  openModal(`
+    <h3 class="modal-title">Tambah Baris SPBY</h3>
+    <p class="modal-text">Isi data utama dulu (uraian, No. SPM, tanggal nota). Data lain tetap bisa dilengkapi langsung di tabel.</p>
+    <div class="grid grid-cols-1 gap-3 mt-4">
+      <div><label class="text-xs font-semibold text-slate-600">Uraian/Nota</label><input id="spby-add-uraian" type="text" placeholder="Contoh: Nota konsumsi rapat" class="w-full mt-1 border border-slate-200 rounded-xl px-3 py-2 text-sm"></div>
+      <div><label class="text-xs font-semibold text-slate-600">No. SPM</label><input id="spby-add-spm" type="text" value="${esc((spbyFilterSpm && spbyFilterSpm !== '__none__') ? spbyFilterSpm : '')}" list="spby-spm-list" class="w-full mt-1 border border-slate-200 rounded-xl px-3 py-2 text-sm"></div>
+      <div><label class="text-xs font-semibold text-slate-600">Tanggal Nota</label><input id="spby-add-tanggal" type="date" value="${tglDefault}" class="w-full mt-1 border border-slate-200 rounded-xl px-3 py-2 text-sm"></div>
+      <label class="flex items-center gap-2 text-xs font-semibold text-slate-700"><input id="spby-add-centang" type="checkbox" class="rounded text-blue-800 focus:ring-blue-600 w-4 h-4"> Centang SPBY (masuk checklist rekap No. SPM)</label>
+    </div>
+    <div class="flex gap-2 justify-end mt-5">
+      <button data-modal-close class="btn-ghost">Batal</button>
+      <button type="button" onclick="submitAddSPBYRow()" class="bg-blue-800 hover:bg-blue-900 text-white text-xs px-4 py-2 rounded-xl font-bold">Tambah Baris</button>
+    </div>`);
+}
+
+async function submitAddSPBYRow() {
   const user = firebase.auth().currentUser;
   if (!user) { toast('Sesi login habis, silakan login ulang.', 'warn'); return; }
-  const now = new Date();
+  const uraian = (document.getElementById('spby-add-uraian')?.value || '').trim();
+  const spm = (document.getElementById('spby-add-spm')?.value || '').trim();
+  const tanggal = document.getElementById('spby-add-tanggal')?.value || '';
+  const spbyChecked = !!document.getElementById('spby-add-centang')?.checked;
+  if (!uraian) { toast('Isi uraian/nota terlebih dahulu.', 'warn'); return; }
+  if (!tanggal) { toast('Isi tanggal nota terlebih dahulu.', 'warn'); return; }
+
   const ref = db.collection('rekam_spby').doc();
   try {
     await ref.set({
-      uraian: '', nominal: 0, tanggal: ymd(now.getFullYear(), now.getMonth() + 1, now.getDate()),
-      spby: false, spm: (spbyFilterSpm && spbyFilterSpm !== '__none__') ? spbyFilterSpm : '', penyedia: '', pph: 0, ppn: 0, kode: '', uraianAkun: '', npwp: '',
+      uraian, nominal: 0, tanggal,
+      spby: spbyChecked, spm: spm || ((spbyFilterSpm && spbyFilterSpm !== '__none__') ? spbyFilterSpm : ''), penyedia: '', pph: 0, ppn: 0, kode: '', uraianAkun: '', npwp: '',
       formPermintaan: '', inputRealisasiBos: '', rekapBendaharaBos: '', kak: '', keterangan: '',
       urut: Date.now(), uploadedBy: user.uid,
       createdAt: firebase.firestore.FieldValue.serverTimestamp()
     });
+    closeModal();
     setTimeout(() => {
       const el = document.querySelector(`#tbody-rekam-spby input[data-id="${ref.id}"][data-f="uraian"]`);
       if (el) { el.scrollIntoView({ block: 'center' }); el.focus(); }
@@ -1379,32 +1546,32 @@ function spbyRowsByMonth(mi) { // mi: 0-11, atau -1 untuk semua bulan
     .sort((a, b) => (a.tanggal || '').localeCompare(b.tanggal || '') || (a._urut - b._urut));
 }
 
-// Kelompokkan baris SPBY yang SUDAH diisi No. SPM, per (No. SPM + bulan tanggal nota).
-// Nama file = "{noSPM}_{bulan}_{tahun}" — misal "25_september_2026" — sesuai catatan Bendahara.
-function spbySpmMonthGroups() {
+// Kelompokkan baris SPBY berdasarkan No. SPM + tanggal nota (hanya baris yang dicentang SPBY).
+// Nama file = "{noSPM}_{tanggal}_{bulan}_{tahun}".
+function spbySpmDateGroups() {
   const groups = {};
   spbyRows.forEach(r => {
     const spm = (r.spm || '').trim();
-    const m = /^(\d{4})-(\d{2})/.exec(r.tanggal || '');
-    if (!spm || !m) return; // lewati baris tanpa No. SPM atau tanpa tanggal nota yang valid
-    const year = +m[1], mi = +m[2] - 1;
-    const key = `${spm}__${year}-${mi}`;
-    if (!groups[key]) groups[key] = { spm, year, mi, rows: [] };
+    const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(r.tanggal || '');
+    if (!spm || !m || !r.spby) return;
+    const year = +m[1], mi = +m[2] - 1, day = +m[3];
+    const key = `${spm}__${year}-${mi}-${day}`;
+    if (!groups[key]) groups[key] = { spm, year, mi, day, rows: [] };
     groups[key].rows.push(r);
   });
-  return Object.values(groups).sort((a, b) => (b.year - a.year) || (b.mi - a.mi) ||
+  return Object.values(groups).sort((a, b) => (b.year - a.year) || (b.mi - a.mi) || (b.day - a.day) ||
     a.spm.localeCompare(b.spm, 'id', { numeric: true }));
 }
 
 function spbyGroupFileLabel(g) {
-  return `${g.spm}_${BULAN_PANJANG[g.mi].toLowerCase()}_${g.year}`;
+  return `${g.spm}_${String(g.day).padStart(2, '0')}_${BULAN_PANJANG[g.mi]}_${g.year}`.replace(/\s+/g, '_');
 }
 
 function openExportSPBY() {
   if (typeof XLSX === 'undefined') { toast('Library Excel belum termuat, coba refresh halaman.', 'error'); return; }
-  const groups = spbySpmMonthGroups();
+  const groups = spbySpmDateGroups();
   const groupOpts = groups.map((g, i) =>
-    `<option value="spm:${i}">${spbyGroupFileLabel(g)}  —  ${g.rows.length} baris (No. SPM ${esc(g.spm)}, ${BULAN_PANJANG[g.mi]} ${g.year})</option>`
+    `<option value="spm:${i}">${spbyGroupFileLabel(g)}  —  ${g.rows.length} baris (No. SPM ${esc(g.spm)}, ${String(g.day).padStart(2, '0')} ${BULAN_PANJANG[g.mi]} ${g.year})</option>`
   ).join('');
 
   const now = new Date();
@@ -1413,14 +1580,14 @@ function openExportSPBY() {
 
   openModal(`
     <h3 class="modal-title">Export Excel SPBY</h3>
-    <p class="modal-text">Pilih file yang mau diunduh. Nama file mengikuti No. SPM &amp; bulan tanggal nota, misalnya <span class="font-mono">25_september_2026</span>. Hanya baris yang sudah diisi No. SPM yang muncul di daftar ini.</p>
+    <p class="modal-text">Checklist kolom SPBY pada baris yang akan direkap, lalu pilih file yang mau diunduh. Nama file mengikuti format <span class="font-mono">NoSPM_15_September_2026</span>.</p>
     <select id="export-spby-pilihan" class="w-full mt-4 border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm bg-white focus:ring-2 focus:ring-blue-600/30 focus:border-blue-600 outline-none transition">
-      ${groups.length ? `<optgroup label="Per No. SPM (nama file otomatis)">${groupOpts}</optgroup>` : ''}
+      ${groups.length ? `<optgroup label="Per No. SPM + Tanggal (baris tercentang)">${groupOpts}</optgroup>` : ''}
       <optgroup label="Rekap bulanan penuh (semua baris, termasuk tanpa No. SPM)">${monthOpts}
         <option value="month:-1">Semua bulan ${TAHUN_ANGGARAN} (${spbyRowsByMonth(-1).length} baris)</option>
       </optgroup>
     </select>
-    ${!groups.length ? '<p class="text-[11px] text-slate-400 mt-2">Belum ada baris dengan No. SPM terisi, jadi baru tersedia rekap bulanan penuh.</p>' : ''}
+    ${!groups.length ? '<p class="text-[11px] text-slate-400 mt-2">Belum ada baris SPBY tercentang dengan No. SPM + tanggal valid, jadi baru tersedia rekap bulanan penuh.</p>' : ''}
     <div class="flex gap-2 justify-end mt-5">
       <button data-modal-close class="btn-ghost">Batal</button>
       <button type="button" onclick="doExportSPBY()" class="bg-blue-800 hover:bg-blue-900 text-white text-xs px-4 py-2 rounded-xl font-bold">Export Excel</button>
@@ -1459,10 +1626,10 @@ function doExportSPBY() {
   const wb = XLSX.utils.book_new();
 
   if (val.startsWith('spm:')) {
-    // -------- Export per No. SPM + bulan (nama file: {spm}_{bulan}_{tahun}) --------
-    const g = spbySpmMonthGroups()[Number(val.slice(4))];
+    // -------- Export per No. SPM + tanggal (nama file: {spm}_{tanggal}_{bulan}_{tahun}) --------
+    const g = spbySpmDateGroups()[Number(val.slice(4))];
     if (!g || !g.rows.length) { toast('Data untuk pilihan ini tidak ditemukan.', 'warn'); return; }
-    const periode = `${BULAN_PANJANG[g.mi]} ${g.year}`;
+    const periode = `${String(g.day).padStart(2, '0')} ${BULAN_PANJANG[g.mi]} ${g.year}`;
     const ws = buildSPBYSheet(g.rows, `SPBY NO. SPM ${g.spm} - ${periode.toUpperCase()}`);
     XLSX.utils.book_append_sheet(wb, ws, 'Rincian SPBY');
     const filename = `${spbyGroupFileLabel(g)}.xlsx`;
@@ -1580,20 +1747,22 @@ function subscribeLembur() {
 function subscribePengajuanLembur() {
   db.collection('pengajuan_lembur').orderBy('createdAt', 'desc').limit(100).onSnapshot(s => {
     listPengajuanLembur = s.docs.map(d => ({ id: d.id, ...d.data() }));
+    refreshLaporanSpklOptions();
     renderMonitoringLembur();
   }, err => console.error('Gagal memuat pengajuan_lembur:', err));
 }
 
 // Cocokkan laporan realisasi untuk satu peserta dalam rentang tanggal pengajuan
 // (tglMulai s/d tglMulai + durasiHari dibulatkan ke atas, dikurangi 1 hari)
-function cariLaporanUntukPeserta(nama, tglMulai, durasiHari) {
+function cariLaporanUntukPeserta(nama, tglMulai, durasiHari, noSpkl) {
   if (!nama || !tglMulai) return null;
+  const bySpkl = l => !noSpkl || (l.noSpkl || '') === noSpkl;
   const start = new Date(tglMulai + 'T00:00:00');
-  if (isNaN(start.getTime())) return listLaporanLembur.find(l => l.nama === nama) || null;
+  if (isNaN(start.getTime())) return listLaporanLembur.find(l => l.nama === nama && bySpkl(l)) || null;
   const span = Math.max(0, Math.ceil(Number(durasiHari) || 1) - 1);
   const end = new Date(start); end.setDate(end.getDate() + span);
   const endStr = end.toISOString().slice(0, 10);
-  return listLaporanLembur.find(l => l.nama === nama && l.tgl >= tglMulai && l.tgl <= endStr) || null;
+  return listLaporanLembur.find(l => l.nama === nama && bySpkl(l) && l.tgl >= tglMulai && l.tgl <= endStr) || null;
 }
 
 function renderMonitoringLembur() {
@@ -1601,7 +1770,7 @@ function renderMonitoringLembur() {
   if (!tbody) return; // halaman belum aktif, skip render
 
   if (!listPengajuanLembur.length) {
-    tbody.innerHTML = '<tr><td colspan="9" class="text-center py-6 text-slate-400">Belum ada pengajuan lembur.</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="12" class="text-center py-6 text-slate-400">Belum ada pengajuan lembur.</td></tr>';
     const belumEl = document.getElementById('monitoring-lembur-belum');
     if (belumEl) belumEl.textContent = '0';
     return;
@@ -1614,7 +1783,7 @@ function renderMonitoringLembur() {
     if (!pesertaSet.length) pesertaSet.push('(tanpa peserta)');
     pesertaSet.forEach((nama, idx) => {
       no++;
-      const lap = cariLaporanUntukPeserta(nama, p.tglMulai, p.durasiHari);
+      const lap = cariLaporanUntukPeserta(nama, p.tglMulai, p.durasiHari, p.noSpkl);
       const sudah = !!lap;
       if (!sudah) belumCount++;
       html.push(`
@@ -1623,8 +1792,10 @@ function renderMonitoringLembur() {
           ${idx === 0 ? `
           <td class="px-3 py-2 font-semibold text-slate-800" rowspan="${pesertaSet.length}">${esc(p.ketua || '-')}</td>
           <td class="px-3 py-2" rowspan="${pesertaSet.length}">${esc(p.tglMulai || '-')}</td>
-          <td class="px-3 py-2" rowspan="${pesertaSet.length}">${esc(p.perihal || '-')}</td>` : ''}
+          <td class="px-3 py-2" rowspan="${pesertaSet.length}">${esc(p.perihal || '-')}</td>
+          <td class="px-3 py-2 font-mono" rowspan="${pesertaSet.length}">${esc(p.noSpkl || '-')}</td>` : ''}
           <td class="px-3 py-2">${esc(nama)}</td>
+          <td class="px-3 py-2 font-mono">${esc(lap?.noSpkl || '-')}</td>
           <td class="px-3 py-2">${esc(lap?.tgl || '-')}</td>
           <td class="px-3 py-2">${lap?.jamLembur ? esc(lap.jamLembur) + ' jam (' + esc(lap.jenisHari || '-') + ')' : '-'}</td>
           <td class="px-3 py-2 max-w-[16rem] truncate" title="${esc(lap?.output || '')}">${esc(lap?.output || '-')}</td>
