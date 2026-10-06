@@ -219,7 +219,7 @@ select:disabled { cursor: not-allowed; opacity: .6; }
    REKAM SPBY: TABEL LANDSCAPE (edit langsung)
    ========================================== */
 .spby-scroll { overflow: auto; max-height: 68vh; border: 1px solid #e2e8f0; border-radius: .9rem; }
-.spby-table { border-collapse: separate; border-spacing: 0; min-width: 2900px; width: 100%; }
+.spby-table { border-collapse: separate; border-spacing: 0; min-width: 3100px; width: 100%; }
 .spby-th { position: sticky; top: 0; z-index: 2; background: #1e3a5f; color: #fff; font-size: .68rem; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; padding: .6rem .5rem; border-right: 1px solid rgba(255,255,255,.14); white-space: normal; text-align: left; vertical-align: middle; }
 .spby-th.text-center { text-align: center; }
 .spby-td { padding: .2rem .25rem; border-bottom: 1px solid #edf1f6; border-right: 1px solid #f3f5f9; vertical-align: middle; }
@@ -251,3 +251,7 @@ select:disabled { cursor: not-allowed; opacity: .6; }
   body.printing-spby .spby-in { padding: 1px 2px; font-size: 6.5pt; border: 0; }
   body.printing-spby .spby-in::-webkit-calendar-picker-indicator { display: none; }
 }
+/* Validasi form: field wajib kosong / salah */
+.input-error { border-color: #ef4444 !important; background-color: #fef2f2 !important; }
+.field-error { font-size: .7rem; font-weight: 600; color: #dc2626; margin-top: .25rem; }
+.field-error.hidden { display: none; }
