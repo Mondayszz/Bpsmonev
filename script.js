@@ -1365,6 +1365,40 @@ function setSPBYFilter(v) {
   updateSPBYFooter();
 }
 
+// No. SPM = dropdown berisi nomor SPM yang sudah ada (+ opsi nomor baru)
+function spbySpmSelect(id, val) {
+  const cur = (val || '').trim();
+  const list = [...new Set(spbyRows.map(r => (r.spm || '').trim()).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'id', { numeric: true }));
+  if (cur && !list.includes(cur)) list.push(cur);
+  return `<select data-id="${id}" data-f="spm" data-t="text" class="spby-in spby-sel"><option value="">— pilih No. SPM —</option>${list.map(v => `<option value="${esc(v)}" ${v === cur ? 'selected' : ''}>${esc(v)}</option>`).join('')}<option value="__new__">+ Nomor SPM baru…</option></select>`;
+}
+
+function openSpmBaruBaris(id) {
+  renderSPBYTable(); // kembalikan pilihan dropdown sampai disimpan
+  openModal(`<h3 class="modal-title">Nomor SPM Baru</h3>
+    <p class="modal-text">Nomor ini dipakai baris ini, lalu muncul di dropdown semua baris.</p>
+    <div class="grid gap-3 mt-4">
+      ${modalField('No. SPM', 'nsb-no', `<input type="text" id="nsb-no" placeholder="Nomor SPM" class="${MI}">`, true)}
+      ${modalField('Tanggal SPM', 'nsb-tgl', `<input type="date" id="nsb-tgl" class="${MI}">`, true)}
+    </div>
+    <div class="flex gap-2 justify-end mt-5"><button data-modal-close class="btn-ghost">Batal</button><button type="button" onclick="simpanSpmBaruBaris('${id}')" class="bg-blue-800 hover:bg-blue-900 text-white text-xs px-4 py-2 rounded-xl font-bold">Simpan</button></div>`);
+  setTimeout(() => document.getElementById('nsb-no')?.focus(), 80);
+}
+
+async function simpanSpmBaruBaris(id) {
+  const no = document.getElementById('nsb-no').value.trim(), tgl = document.getElementById('nsb-tgl').value;
+  setFieldError('nsb-no', no ? '' : 'No. SPM wajib diisi.'); setFieldError('nsb-tgl', tgl ? '' : 'Tanggal SPM wajib diisi.');
+  if (!no || !tgl) return;
+  const b = db.batch(), ch = spbyRows.filter(r => r.id === id || ((r.spm || '').trim().toLowerCase() === no.toLowerCase() && r.spmTgl !== tgl));
+  ch.forEach(r => b.set(db.collection('rekam_spby').doc(r.id), r.id === id ? { spm: no, spmTgl: tgl } : { spmTgl: tgl }, { merge: true }));
+  try {
+    await b.commit();
+    ch.forEach(r => { if (r.id === id) r.spm = no; r.spmTgl = tgl; });
+    closeModal(); refreshSPBYFilterOptions(); renderSPBYTable(); updateSPBYFooter();
+    toast(`No. SPM ${no} dipakai.`, 'success');
+  } catch (err) { console.error(err); toast('Gagal menyimpan No. SPM. (' + err.message + ')', 'error'); }
+}
+
 function spbyText(id, f, val, ph, list) {
   return `<input type="text" data-id="${id}" data-f="${f}" data-t="text" value="${esc(val)}" ${ph ? `placeholder="${ph}"` : ''} ${list ? `list="${list}"` : ''} class="spby-in">`;
 }
@@ -1381,19 +1415,6 @@ function spbyCheck(id, f, val) {
   return `<input type="checkbox" data-id="${id}" data-f="${f}" data-t="bool" ${val ? 'checked' : ''} class="spby-chk">`;
 }
 
-let spbySel = new Set();
-function updateSpbySelUI() {
-  const b = document.getElementById('btn-pilih-spm');
-  if (!b) return;
-  b.classList.toggle('hidden', !spbySel.size); b.classList.toggle('flex', !!spbySel.size);
-  document.getElementById('spby-sel-count').textContent = spbySel.size;
-}
-function spbyPick(id, on) { on ? spbySel.add(id) : spbySel.delete(id); updateSpbySelUI(); }
-function spbyPickAll(on) {
-  getSPBYView().filter(r => !(r.spm || '').trim()).forEach(r => on ? spbySel.add(r.id) : spbySel.delete(r.id));
-  renderSPBYTable();
-}
-
 function renderSPBYTable() {
   const tbody = document.getElementById('tbody-rekam-spby');
   if (!tbody) return;
@@ -1401,20 +1422,17 @@ function renderSPBYTable() {
   const view = getSPBYView();
   if (!view.length) {
     tbody.innerHTML = spbyFilterSpm
-      ? '<tr><td colspan="20" class="text-center py-6 text-slate-400">Tidak ada baris untuk filter No. SPM ini.</td></tr>'
-      : '<tr><td colspan="20" class="text-center py-6 text-slate-400">Belum ada data. Klik <b>Tambah Baris</b> untuk mulai mengisi.</td></tr>';
+      ? '<tr><td colspan="19" class="text-center py-6 text-slate-400">Tidak ada baris untuk filter No. SPM ini.</td></tr>'
+      : '<tr><td colspan="19" class="text-center py-6 text-slate-400">Belum ada data. Klik <b>Tambah Baris</b> untuk mulai mengisi.</td></tr>';
     return;
   }
-  [...spbySel].forEach(x => { const r = spbyRows.find(y => y.id === x); if (!r || (r.spm || '').trim()) spbySel.delete(x); });
   tbody.innerHTML = view.map((d, i) => {
     const id = d.id;
-    const canPick = !(d.spm || '').trim();
     return `<tr>
-      <td class="spby-td text-center no-print">${canPick ? `<input type="checkbox" class="spby-chk" ${spbySel.has(id) ? 'checked' : ''} onchange="spbyPick('${id}', this.checked)">` : ''}</td>
       <td class="spby-td text-center text-slate-400 font-semibold">${i + 1}</td>
       <td class="spby-td">${spbyText(id, 'uraian', d.uraian, 'Uraian belanja')}</td>
       <td class="spby-td text-center">${spbyCheck(id, 'spby', d.spby)}</td>
-      <td class="spby-td">${spbyText(id, 'spm', d.spm, 'No. SPM', 'spby-spm-list')}</td>
+      <td class="spby-td">${spbySpmSelect(id, d.spm)}</td>
       <td class="spby-td">${spbyDate(id, d.spmTgl, 'spmTgl')}</td>
       <td class="spby-td">${spbyNum(id, 'nominal', d.nominal)}</td>
       <td class="spby-td">${spbyDate(id, d.tanggal)}</td>
@@ -1432,7 +1450,6 @@ function renderSPBYTable() {
       <td class="spby-td text-center no-print"><button type="button" data-del="${id}" title="Hapus baris" class="spby-del"><i data-lucide="trash-2" class="w-4 h-4 pointer-events-none"></i></button></td>
     </tr>`;
   }).join('');
-  updateSpbySelUI();
   if (window.lucide) lucide.createIcons();
 }
 
@@ -1463,6 +1480,7 @@ async function saveSPBYField(id, field, value) {
       const t = spbyRows.find(r => r.id !== id && (r.spm || '').trim().toLowerCase() === value.toLowerCase() && r.spmTgl)?.spmTgl;
       if (t) { row.spmTgl = t; await db.collection('rekam_spby').doc(id).set({ spmTgl: t }, { merge: true }); }
     }
+    if (row && field === 'spm' && !value && row.spmTgl) { row.spmTgl = ''; await db.collection('rekam_spby').doc(id).set({ spmTgl: '' }, { merge: true }); }
     if (field === 'spm') renderSPBYTable();
   } catch (err) { console.error(err); }
   try {
@@ -1563,9 +1581,8 @@ function ispmCtx() {
   return { no, tgl, q, elig, rows };
 }
 
-function openInputSPM(fromSel) {
-  if (fromSel && !spbySel.size) { toast('Centang dulu baris yang mau dimasukkan ke SPM.', 'warn'); return; }
-  ispmSel = new Set(fromSel ? [...spbySel] : []);
+function openInputSPM() {
+  ispmSel = new Set();
   openModal(`<h3 class="modal-title">Input SPM</h3>
     <p class="modal-text">Isi No. SPM &amp; tanggal SPM, lalu centang uraian/nota yang masuk ke SPM ini (tanggal nota boleh berbeda, lintas bulan pun bisa). Nama file rekap: <span class="font-mono font-semibold text-slate-700" id="ispm-file">-</span></p>
     <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-4">
@@ -1631,7 +1648,6 @@ async function simpanInputSPM() {
     await batch.commit();
     changes.forEach(([r, a, b]) => { r.spm = a; r.spmTgl = b; });
     closeModal();
-    spbySel = new Set();
     refreshSPBYFilterOptions(); renderSPBYTable(); updateSPBYFooter();
     toast(`SPM ${no} tersimpan (${ispmSel.size} baris). File rekap: ${spmFileLabel(no, tgl)}`, 'success');
   } catch (err) {
@@ -1688,6 +1704,7 @@ window.addEventListener('DOMContentLoaded', () => {
   tbody.addEventListener('change', e => {
     const el = e.target.closest('[data-f]');
     if (!el) return;
+    if (el.dataset.f === 'spm' && el.value === '__new__') { openSpmBaruBaris(el.dataset.id); return; }
     let v;
     if (el.dataset.t === 'bool') v = el.checked;
     else if (el.dataset.t === 'num') v = el.value === '' ? 0 : Number(el.value) || 0;
@@ -1897,7 +1914,7 @@ function subscribeRekamSPBY() {
     renderSPBYTable();
   }, err => {
     console.error('Gagal memuat rekam_spby:', err);
-    if (tbody) tbody.innerHTML = '<tr><td colspan="20" class="text-center py-6 text-red-400">Gagal memuat data (cek Firestore rules).</td></tr>';
+    if (tbody) tbody.innerHTML = '<tr><td colspan="19" class="text-center py-6 text-red-400">Gagal memuat data (cek Firestore rules).</td></tr>';
   });
 }
 
